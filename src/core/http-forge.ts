@@ -20,15 +20,18 @@ export class HttpForge {
   }
 
   private initializeOptions(inputOptions: HttpOptions) {
-    const { retryLength, timeoutLength } = inputOptions;
+    const { headers, retryLength, timeoutLength } = inputOptions;
 
     const normalizedRetry = retryLength ?? HTTP_FORGE_DEFAULT_RETRY_LENGTH;
     const normalizedTimeout =
       timeoutLength ?? HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH;
 
+    const formattedHeaders = new Headers(headers ?? {});
+
     this.httpOptions = {
       ...inputOptions,
       credentials: HTTP_FORGE_FIXED_CREDENTIALS,
+      headers: formattedHeaders,
       retryLength: normalizedRetry,
       timeoutLength: normalizedTimeout,
     };

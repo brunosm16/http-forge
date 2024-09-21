@@ -5,8 +5,9 @@ export type HttpError = {
 
 export type HttpOptions = {
   [key: string]: unknown;
-  credentials: string;
+  credentials?: string;
+  headers?: Headers;
   method: string;
-  retryLength: number;
-  timeoutLength: number;
+  retryLength?: number;
+  timeoutLength?: number;
 };
