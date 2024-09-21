@@ -1,0 +1,3 @@
+export const HTTP_FORGE_FIXED_CREDENTIALS = 'same-origin';
+export const HTTP_FORGE_DEFAULT_RETRY_LENGTH = 5;
+export const HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH = 8000;
