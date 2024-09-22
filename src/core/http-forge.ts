@@ -1,4 +1,4 @@
-import type { HttpOptions } from '@/types/http';
+import type { HttpInputType, HttpOptions } from '@/types/http';
 
 import {
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
@@ -10,17 +10,17 @@ import {
 } from '@/constants';
 import { GenericHttpError } from '@/errors';
 import { TimeoutError } from '@/errors/timeout-error';
-import { delay } from '@/utils';
+import { delay, timeout } from '@/utils';
 
 export class HttpForge {
-  private httpOptions: HttpOptions;
+  private httpInput: URL | globalThis.Request | string;
 
-  private payload: unknown;
+  private httpOptions: HttpOptions;
 
   private retryAttempts: number = 0;
 
-  constructor(payload: unknown, httpOptions: HttpOptions) {
-    this.payload = payload;
+  constructor(httpInput: HttpInputType, httpOptions: HttpOptions) {
+    this.httpInput = httpInput;
 
     this.initializeOptions(httpOptions);
 
@@ -31,7 +31,7 @@ export class HttpForge {
     const { jsonBody } = this.httpOptions;
 
     if (jsonBody) {
-      this.httpOptions.headers.set('Content-Type', 'application/json');
+      this.httpOptions.requestHeaders.set('Content-Type', 'application/json');
       this.httpOptions.body = JSON.stringify(jsonBody);
     }
   }
@@ -39,6 +39,11 @@ export class HttpForge {
   private async doExponentialBackoff(retryAttempts: number) {
     const backoff = RETRY_BACKOFF_FACTOR * 2 ** retryAttempts;
     return delay(backoff);
+  }
+
+  private doFetchWithTimeout() {
+    const fetchFn = fetch(this.httpInput, this.httpOptions);
+    return timeout(fetchFn, this.httpOptions.timeoutLength);
   }
 
   private initializeOptions(inputOptions: HttpOptions) {
@@ -53,7 +58,7 @@ export class HttpForge {
     this.httpOptions = {
       ...inputOptions,
       credentials: HTTP_FORGE_FIXED_CREDENTIALS,
-      headers: formattedHeaders,
+      requestHeaders: formattedHeaders,
       retryCount: normalizedRetry,
       timeoutLength: normalizedTimeout,
     };

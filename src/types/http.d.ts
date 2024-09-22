@@ -5,11 +5,10 @@ export type HttpError = {
 
 export type HttpOptions = {
   [key: string]: unknown;
-  body?: unknown;
-  credentials?: string;
-  headers?: Headers;
   jsonBody?: unknown;
-  method: string;
+  requestHeaders?: Headers;
   retryCount?: number;
   timeoutLength?: number;
-};
+} & RequestInit;
+
+export type HttpInputType = URL | globalThis.Request | string;
