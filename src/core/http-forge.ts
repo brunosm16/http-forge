@@ -4,14 +4,20 @@ import {
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
   HTTP_FORGE_FIXED_CREDENTIALS,
+  RETRY_BACKOFF_FACTOR,
+  RETRY_METHODS,
+  RETRY_STATUS_CODES,
 } from '@/constants';
+import { GenericHttpError } from '@/errors';
+import { TimeoutError } from '@/errors/timeout-error';
+import { delay } from '@/utils';
 
 export class HttpForge {
   private httpOptions: HttpOptions;
 
   private payload: unknown;
 
-  private retryLength: number = 0;
+  private retryAttempts: number = 0;
 
   constructor(payload: unknown, httpOptions: HttpOptions) {
     this.payload = payload;
@@ -30,10 +36,15 @@ export class HttpForge {
     }
   }
 
-  private initializeOptions(inputOptions: HttpOptions) {
-    const { headers, isJSON, retryLength, timeoutLength } = inputOptions;
+  private async doExponentialBackoff(retryAttempts: number) {
+    const backoff = RETRY_BACKOFF_FACTOR * 2 ** retryAttempts;
+    return delay(backoff);
+  }
 
-    const normalizedRetry = retryLength ?? HTTP_FORGE_DEFAULT_RETRY_LENGTH;
+  private initializeOptions(inputOptions: HttpOptions) {
+    const { headers, retryCount, timeoutLength } = inputOptions;
+
+    const normalizedRetry = retryCount ?? HTTP_FORGE_DEFAULT_RETRY_LENGTH;
     const normalizedTimeout =
       timeoutLength ?? HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH;
 
@@ -43,8 +54,64 @@ export class HttpForge {
       ...inputOptions,
       credentials: HTTP_FORGE_FIXED_CREDENTIALS,
       headers: formattedHeaders,
-      retryLength: normalizedRetry,
+      retryCount: normalizedRetry,
       timeoutLength: normalizedTimeout,
     };
+  }
+
+  private isRetryError(error: unknown): boolean {
+    const isGenericHttpError = error instanceof GenericHttpError;
+    const isTimeoutError = error instanceof TimeoutError;
+
+    return isGenericHttpError && !isTimeoutError;
+  }
+
+  private isValidRetryStatusCode(error: GenericHttpError): boolean {
+    const { statusCode } = error;
+    return RETRY_STATUS_CODES.includes(statusCode as number);
+  }
+
+  private async retry(fn: () => Promise<Response>, method: string) {
+    const normalizedMethod = method.toUpperCase();
+
+    const isMethodAllowedToRetry = RETRY_METHODS.includes(normalizedMethod);
+
+    if (!isMethodAllowedToRetry) {
+      return fn;
+    }
+
+    try {
+      return await fn();
+    } catch (error) {
+      const isAllowedToRetry = this.shouldRetry(
+        error,
+        this.retryAttempts,
+        this.httpOptions.retryCount
+      );
+
+      if (isAllowedToRetry) {
+        await this.doExponentialBackoff(this.retryAttempts);
+
+        this.retryAttempts += 1;
+
+        return this.retry(fn, method);
+      }
+
+      throw error;
+    }
+  }
+
+  private shouldRetry(
+    error: unknown,
+    attempts: number,
+    maxLimit: number
+  ): boolean {
+    const isValidRetryAttempt = attempts < maxLimit;
+
+    return (
+      isValidRetryAttempt &&
+      this.isRetryError(error) &&
+      this.isValidRetryStatusCode(error as GenericHttpError)
+    );
   }
 }

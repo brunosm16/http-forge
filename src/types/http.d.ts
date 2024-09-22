@@ -10,6 +10,6 @@ export type HttpOptions = {
   headers?: Headers;
   jsonBody?: unknown;
   method: string;
-  retryLength?: number;
+  retryCount?: number;
   timeoutLength?: number;
 };
