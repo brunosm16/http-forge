@@ -12,3 +12,10 @@ export type HttpOptions = {
 } & RequestInit;
 
 export type HttpInputType = URL | globalThis.Request | string;
+
+export type HttpResponsesTypes =
+  | 'arrayBuffer'
+  | 'blob'
+  | 'formData'
+  | 'json'
+  | 'text';

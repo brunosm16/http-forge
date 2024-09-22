@@ -1,3 +1,5 @@
+import type { HttpResponsesTypes } from '@/types/http';
+
 import { HTTP_STATUS_CODES } from './http-status-codes';
 
 export const REQUEST_METHODS = [
@@ -9,13 +11,13 @@ export const REQUEST_METHODS = [
   'DELETE',
 ];
 
-export const RESPONSE_TYPES = [
+export const HTTP_RESPONSES_TYPES = [
   'json',
   'text',
   'formData',
   'blob',
   'arrayBuffer',
-];
+] as HttpResponsesTypes[];
 
 export const RETRY_METHODS = [
   'GET',
