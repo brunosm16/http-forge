@@ -17,10 +17,21 @@ export class HttpForge {
     this.payload = payload;
 
     this.initializeOptions(httpOptions);
+
+    this.appendJSONBody();
+  }
+
+  private appendJSONBody() {
+    const { jsonBody } = this.httpOptions;
+
+    if (jsonBody) {
+      this.httpOptions.headers.set('Content-Type', 'application/json');
+      this.httpOptions.body = JSON.stringify(jsonBody);
+    }
   }
 
   private initializeOptions(inputOptions: HttpOptions) {
-    const { headers, retryLength, timeoutLength } = inputOptions;
+    const { headers, isJSON, retryLength, timeoutLength } = inputOptions;
 
     const normalizedRetry = retryLength ?? HTTP_FORGE_DEFAULT_RETRY_LENGTH;
     const normalizedTimeout =
