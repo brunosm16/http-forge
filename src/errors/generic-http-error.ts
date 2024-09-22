@@ -1,15 +1,12 @@
-import type { HttpError } from '@/types/http';
-
 export class GenericHttpError extends Error {
-  public statusCode: number | string;
+  public status: number;
 
-  constructor(httpError?: HttpError) {
-    const { errorMessage, statusCode } = httpError;
+  constructor(response: Response) {
+    const { status, statusText } = response;
 
-    super(statusCode);
+    super(statusText);
 
-    this.name = 'GenericHttpError';
-    this.message = errorMessage ?? 'An http error occurred';
-    this.statusCode = statusCode;
+    this.name = 'HttpError';
+    this.status = status;
   }
 }
