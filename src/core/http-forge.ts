@@ -18,7 +18,7 @@ import { TimeoutError } from '@/errors/timeout-error';
 import { delay, timeout } from '@/utils';
 
 export class HttpForge {
-  private httpInput: URL | globalThis.Request | string;
+  private httpInput: HttpInputType;
 
   private httpOptions: HttpOptions;
 
