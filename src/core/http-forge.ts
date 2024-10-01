@@ -16,7 +16,7 @@ import {
   HTTP_SUPPORTED_RESPONSES,
 } from '@/constants';
 import { HttpError, TimeoutError } from '@/errors';
-import { delay, timeout } from '@/utils';
+import { deepMerge, delay, timeout } from '@/utils';
 
 export class HttpForge {
   private httpForgeInput: HttpForgeInput;
@@ -36,6 +36,15 @@ export class HttpForge {
     this.initializeOptions(httpForgeOptions);
 
     this.appendJSONBody();
+  }
+
+  static createHttpForge(
+    httpInput: HttpForgeInput,
+    defaultOptions?: HttpForgeOptions
+  ) {
+    const mergedOptions = deepMerge({}, defaultOptions) as HttpForgeOptions;
+    const httpForge = new HttpForge(httpInput, mergedOptions);
+    return httpForge.responseOptions();
   }
 
   private appendJSONBody() {
