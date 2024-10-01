@@ -7,7 +7,7 @@ export type HttpForgeOptions = {
   [key: string]: unknown;
   jsonBody?: unknown;
   requestHeaders?: Headers;
-  retryCount?: number;
+  retryLength?: number;
   timeoutLength?: number;
 } & RequestInit;
 
@@ -27,3 +27,8 @@ export type HttpSupportedMethods =
   | 'patch'
   | 'post'
   | 'put';
+
+export type HttpForgeResponses = Record<
+  HttpSupportedResponses,
+  Promise<Response>
+>;
