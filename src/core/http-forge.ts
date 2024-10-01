@@ -27,6 +27,20 @@ export class HttpForge {
     this.httpForgeInput = httpForgeInput;
 
     this.initializeOptions(httpForgeOptions);
+
+    this.appendJSONBody();
+  }
+
+  private appendJSONBody() {
+    const { jsonBody } = this.httpForgeOptions;
+
+    if (jsonBody) {
+      this.httpForgeOptions.requestHeaders.set(
+        'Content-Type',
+        'application/json'
+      );
+      this.httpForgeOptions.body = JSON.stringify(jsonBody);
+    }
   }
 
   private initializeOptions(options: HttpForgeOptions) {
