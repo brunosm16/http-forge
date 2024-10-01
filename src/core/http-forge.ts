@@ -9,7 +9,6 @@ import type {
 import {
   HTTP_ALLOWED_RETRY_STATUS_CODES,
   HTTP_FORGE_DEFAULT_CREDENTIALS,
-  HTTP_FORGE_DEFAULT_METHOD,
   HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR,
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
@@ -76,9 +75,7 @@ export class HttpForge {
         throw new HttpError(response);
       }
 
-      const clonedResponse = response.clone()[type];
-
-      return clonedResponse();
+      return response.clone()[type]();
     } catch (error) {
       if (this.shouldRetry(error)) {
         await this.exponentialBackoff();
@@ -90,20 +87,17 @@ export class HttpForge {
   }
 
   private initializeOptions(options: HttpForgeOptions) {
-    const { headers, method, retryLength, timeoutLength } = options;
+    const { headers, retryLength, timeoutLength } = options;
 
     const resolvedRetry = retryLength ?? HTTP_FORGE_DEFAULT_RETRY_LENGTH;
 
     const resolvedTimeout = timeoutLength ?? HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH;
-
-    const resolvedMethod = method ?? HTTP_FORGE_DEFAULT_METHOD;
 
     const resolvedHeaders = new Headers(headers ?? {});
 
     this.httpForgeOptions = {
       ...options,
       credentials: HTTP_FORGE_DEFAULT_CREDENTIALS,
-      method: resolvedMethod,
       requestHeaders: resolvedHeaders,
       retryLength: resolvedRetry,
       timeoutLength: resolvedTimeout,
