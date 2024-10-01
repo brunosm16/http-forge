@@ -4,7 +4,10 @@ import { TimeoutError } from '@/errors/timeout-error';
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export const timeout = (fn: Promise<unknown>, timeoutLength: number) =>
+export const timeout = (
+  fn: Promise<Response>,
+  timeoutLength: number
+): Promise<Response> =>
   new Promise((resolve, reject) => {
     fn.then(resolve, reject);
 

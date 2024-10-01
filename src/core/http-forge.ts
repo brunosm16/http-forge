@@ -2,16 +2,19 @@ import type {
   HttpForgeInput,
   HttpForgeOptions,
   HttpForgeResponses,
+  HttpSupportedResponses,
 } from '@/types/http';
 
 import {
   HTTP_ALLOWED_RETRY_STATUS_CODES,
   HTTP_FORGE_DEFAULT_CREDENTIALS,
   HTTP_FORGE_DEFAULT_METHOD,
+  HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR,
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
 } from '@/constants';
 import { HttpError, TimeoutError } from '@/errors';
+import { delay, timeout } from '@/utils';
 
 export class HttpForge {
   private httpForgeInput: HttpForgeInput;
@@ -42,6 +45,37 @@ export class HttpForge {
         'application/json'
       );
       this.httpForgeOptions.body = JSON.stringify(jsonBody);
+    }
+  }
+
+  private async exponentialBackoff() {
+    const backoff =
+      HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR * 2 ** this.retryAttempts;
+    return delay(backoff);
+  }
+
+  private async fetch(type: keyof HttpSupportedResponses): Promise<Response> {
+    try {
+      const fetchFn = fetch(this.httpForgeInput, this.httpForgeOptions);
+
+      const { timeoutLength } = this.httpForgeOptions;
+
+      const response = await timeout(fetchFn, timeoutLength);
+
+      if (!response?.ok) {
+        throw new HttpError(response);
+      }
+
+      const clonedResponse = response.clone()[type];
+
+      return clonedResponse();
+    } catch (error) {
+      if (this.shouldRetry(error)) {
+        await this.exponentialBackoff();
+        return this.fetch(type);
+      }
+
+      throw error;
     }
   }
 
@@ -78,21 +112,14 @@ export class HttpForge {
     return HTTP_ALLOWED_RETRY_STATUS_CODES.includes(status);
   }
 
-  private shouldRetry(
-    error: unknown,
-    attempts: number,
-    maxLimit: number
-  ): boolean {
-    const isValidRetryAttempt = attempts < maxLimit;
+  private shouldRetry(error: unknown): boolean {
+    const isValidRetryAttempt =
+      this.retryAttempts < this.httpForgeOptions.retryLength;
 
     return (
       isValidRetryAttempt &&
       this.isRetryError(error) &&
       this.isRetryStatusCode(error as HttpError)
     );
-  }
-
-  public getResponse() {
-    return this.responses;
   }
 }
