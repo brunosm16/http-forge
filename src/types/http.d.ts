@@ -32,3 +32,8 @@ export type HttpForgeResponses = Record<
   HttpSupportedResponses,
   Promise<Response>
 >;
+
+export type HttpForgeResponseOptions = Record<
+  HttpSupportedResponses,
+  () => Promise<Response>
+>;

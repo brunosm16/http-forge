@@ -1,6 +1,7 @@
 import type {
   HttpForgeInput,
   HttpForgeOptions,
+  HttpForgeResponseOptions,
   HttpForgeResponses,
   HttpSupportedResponses,
 } from '@/types/http';
@@ -12,6 +13,7 @@ import {
   HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR,
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
+  HTTP_SUPPORTED_RESPONSES,
 } from '@/constants';
 import { HttpError, TimeoutError } from '@/errors';
 import { delay, timeout } from '@/utils';
@@ -110,6 +112,22 @@ export class HttpForge {
   private isRetryStatusCode(error: HttpError): boolean {
     const { status } = error;
     return HTTP_ALLOWED_RETRY_STATUS_CODES.includes(status);
+  }
+
+  private responseOptions() {
+    const responses = HTTP_SUPPORTED_RESPONSES.reduce(
+      (acc: HttpForgeResponseOptions, type: HttpSupportedResponses) => {
+        const updatedAcc = {
+          ...acc,
+          [type]: () => this.fetch(type as keyof HttpSupportedResponses),
+        };
+
+        return updatedAcc;
+      },
+      {} as HttpForgeResponseOptions
+    );
+
+    return responses;
   }
 
   private shouldRetry(error: unknown): boolean {
