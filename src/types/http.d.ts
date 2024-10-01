@@ -42,7 +42,7 @@ export type HttpForgeMethods = {
   [key in HttpSupportedMethods]: (
     httpForgeInput: HttpForgeInput,
     defaultOptions: HttpForgeOptions
-  ) => Promise<Response>;
+  ) => HttpForgeResponseOptions;
 } & {
   extend: (defaultOptions: HttpForgeOptions) => HttpForgeMethods;
 };
