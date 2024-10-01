@@ -5,11 +5,13 @@ import type {
 } from '@/types/http';
 
 import {
+  HTTP_ALLOWED_RETRY_STATUS_CODES,
   HTTP_FORGE_DEFAULT_CREDENTIALS,
   HTTP_FORGE_DEFAULT_METHOD,
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
 } from '@/constants';
+import { HttpError, TimeoutError } from '@/errors';
 
 export class HttpForge {
   private httpForgeInput: HttpForgeInput;
@@ -62,5 +64,35 @@ export class HttpForge {
       retryLength: resolvedRetry,
       timeoutLength: resolvedTimeout,
     };
+  }
+
+  private isRetryError(error: unknown): boolean {
+    const isGenericHttpError = error instanceof HttpError;
+    const isTimeoutError = error instanceof TimeoutError;
+
+    return isGenericHttpError && !isTimeoutError;
+  }
+
+  private isRetryStatusCode(error: HttpError): boolean {
+    const { status } = error;
+    return HTTP_ALLOWED_RETRY_STATUS_CODES.includes(status);
+  }
+
+  private shouldRetry(
+    error: unknown,
+    attempts: number,
+    maxLimit: number
+  ): boolean {
+    const isValidRetryAttempt = attempts < maxLimit;
+
+    return (
+      isValidRetryAttempt &&
+      this.isRetryError(error) &&
+      this.isRetryStatusCode(error as HttpError)
+    );
+  }
+
+  public getResponse() {
+    return this.responses;
   }
 }
