@@ -1,3 +1,8 @@
+import type {
+  HttpSupportedMethods,
+  HttpSupportedResponses,
+} from '@/types/http';
+
 import { HTTP_STATUS_CODES } from './http-status-codes.constants';
 
 export const HTTP_SUPPORTED_METHODS = [
@@ -7,7 +12,7 @@ export const HTTP_SUPPORTED_METHODS = [
   'patch',
   'head',
   'delete',
-] as const;
+] as HttpSupportedMethods[];
 
 export const HTTP_SUPPORTED_RESPONSES = [
   'json',
@@ -15,7 +20,7 @@ export const HTTP_SUPPORTED_RESPONSES = [
   'formData',
   'blob',
   'arrayBuffer',
-] as const;
+] as HttpSupportedResponses[];
 
 export const HTTP_ALLOWED_RETRY_METHODS = [
   'get',
