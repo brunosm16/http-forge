@@ -15,8 +15,10 @@ const buildHttpForge = (
   method: keyof HttpForgeMethods,
   defaultOptions?: HttpForgeOptions
 ) => {
+  const normalizedMethod = method?.toUpperCase();
+
   const mergedOptions = deepMerge({}, defaultOptions, httpForgeOptions, {
-    method,
+    method: normalizedMethod,
   });
 
   return HttpForge.createHttpForge(
