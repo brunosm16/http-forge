@@ -67,5 +67,22 @@ describe('Http forge tests', () => {
 
       expect(result).toEqual('Hey this is a successful PUT response');
     });
+
+    it('Should append JSON body', async () => {
+      const endpoint = `${serverTest.url}/json-test`;
+
+      const jsonBody = {
+        key: 'value',
+        key2: 'value2',
+      };
+
+      const result = await httpForge
+        .post(endpoint, {
+          jsonBody,
+        })
+        .json();
+
+      expect(result).toEqual(jsonBody);
+    });
   });
 });

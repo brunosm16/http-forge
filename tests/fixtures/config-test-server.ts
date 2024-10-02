@@ -27,5 +27,9 @@ export const configTestServer = async () => {
     res.end('Hey this is a successful PUT response');
   });
 
+  server.post('/json-test', (req, res) => {
+    res.json(JSON.parse(req.body));
+  });
+
   return server;
 };
