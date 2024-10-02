@@ -31,5 +31,13 @@ export const configTestServer = async () => {
     res.json(JSON.parse(req.body));
   });
 
+  server.get('/headers-test', (req, res) => {
+    const { headers } = req;
+
+    const customHeader = headers['x-custom-header'];
+
+    res.end(customHeader);
+  });
+
   return server;
 };

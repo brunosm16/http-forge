@@ -67,7 +67,9 @@ describe('Http forge tests', () => {
 
       expect(result).toEqual('Hey this is a successful PUT response');
     });
+  });
 
+  describe('HTTP Headers and Options', () => {
     it('Should append JSON body', async () => {
       const endpoint = `${serverTest.url}/json-test`;
 
@@ -83,6 +85,22 @@ describe('Http forge tests', () => {
         .json();
 
       expect(result).toEqual(jsonBody);
+    });
+
+    it('Should allow custom headers', async () => {
+      const endpoint = `${serverTest.url}/headers-test`;
+
+      const headers = {
+        'x-custom-header': 'custom-header',
+      };
+
+      const result = await httpForge
+        .get(endpoint, {
+          headers,
+        })
+        .text();
+
+      expect(result).toEqual(headers['x-custom-header']);
     });
   });
 });
