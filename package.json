@@ -24,8 +24,9 @@
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "prepare": "husky",
     "lint": "eslint \"{src,apps,libs,tests}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:watch": "npm run test -- --watch",
+    "test:watch:verbose": "npm run test:watch -- --verbose",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
   },
