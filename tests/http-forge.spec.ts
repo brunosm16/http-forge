@@ -1,21 +1,23 @@
-import type createTestServer from 'create-test-server';
-
 import httpForge from '@/main';
 
 import { configTestServer } from './fixtures/config-test-server';
 
-type Server = {
-  get: (url: string, response: (() => string) | string) => void;
-} & createTestServer.TestServer;
-
 describe('Http forge tests', () => {
-  let serverTest: Server = null;
+  let serverTest: any = null;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     serverTest = await configTestServer();
   });
 
-  afterEach(async () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  afterAll(async () => {
     await serverTest.close();
   });
 
