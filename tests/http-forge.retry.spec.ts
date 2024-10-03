@@ -1,4 +1,4 @@
-import { HTTP_ALLOWED_RETRY_STATUS_CODES } from '@/constants';
+import { HTTP_STATUS_CODES } from '@/constants';
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
@@ -26,7 +26,11 @@ describe('Retry logic', () => {
       }
     });
 
-    const result = await httpForge.get(endpoint, {}).text();
+    const result = await httpForge
+      .get(endpoint, {
+        retryLength: 2,
+      })
+      .text();
 
     expect(result).toEqual('Hey this is a successful GET response');
   });
@@ -52,7 +56,7 @@ describe('Retry logic', () => {
 
     const promise = httpForge
       .get(endpoint, {
-        retryLength: 3,
+        retryLength: 2,
       })
       .text();
 
@@ -87,30 +91,68 @@ describe('Retry logic', () => {
     expect(promise).rejects.toThrow('Service Unavailable');
   });
 
-  it.each(HTTP_ALLOWED_RETRY_STATUS_CODES)(
-    `Should retry request for valid status code %i`,
-    async (statusCode) => {
+  it.each([
+    HTTP_STATUS_CODES.STATUS_CODE_408,
+    HTTP_STATUS_CODES.STATUS_CODE_413,
+    HTTP_STATUS_CODES.STATUS_CODE_429,
+  ])(`Should retry request for valid status code %i`, async (statusCode) => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    const retryLimit = 3;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.status(statusCode).end();
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const result = await httpForge
+      .get(endpoint, {
+        retryLength: 2,
+      })
+      .text();
+
+    expect(result).toEqual('Hey this is a successful GET response');
+  });
+
+  it.each(['get', 'put'])(
+    `Should retry request for valid method %s`,
+    async (method) => {
       const server = await createTestServer();
 
       const endpoint = `${server.url}/retry-test`;
 
-      const retryLimit = 3;
+      const retryLimit = 2;
 
       let attempts = 0;
 
-      server.get('/retry-test', async (req, res) => {
+      const normalizedMethod = method.toLowerCase();
+
+      server[normalizedMethod]('/retry-test', async (req, res) => {
         attempts += 1;
 
         if (attempts < retryLimit) {
-          res.status(statusCode).end();
+          res.status(503).end();
         } else {
-          res.end('Hey this is a successful GET response');
+          res.end(`Hey this is a successful ${normalizedMethod} response`);
         }
       });
 
-      const result = await httpForge.get(endpoint, {}).text();
+      const result = await httpForge[method](endpoint, {
+        retryLength: 2,
+      }).text();
 
-      expect(result).toEqual('Hey this is a successful GET response');
+      expect(result).toEqual(
+        `Hey this is a successful ${normalizedMethod} response`
+      );
     }
   );
 });

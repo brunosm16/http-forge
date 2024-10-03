@@ -27,8 +27,6 @@ export const HTTP_ALLOWED_RETRY_METHODS = [
   'put',
   'head',
   'delete',
-  'options',
-  'trace',
 ] as const;
 
 export const HTTP_ALLOWED_RETRY_STATUS_CODES = [
