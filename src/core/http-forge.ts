@@ -2,13 +2,13 @@ import type {
   HttpForgeInput,
   HttpForgeOptions,
   HttpForgeResponseOptions,
-  HttpForgeResponses,
   HttpSupportedResponses,
 } from '@/types/http';
 
 import {
   HTTP_ALLOWED_RETRY_STATUS_CODES,
   HTTP_FORGE_DEFAULT_CREDENTIALS,
+  HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY,
   HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR,
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
@@ -21,8 +21,6 @@ export class HttpForge {
   private httpForgeInput: HttpForgeInput;
 
   private httpForgeOptions: HttpForgeOptions;
-
-  private responses: HttpForgeResponses;
 
   private retryAttempts: number = 0;
 
@@ -59,8 +57,10 @@ export class HttpForge {
 
   private async exponentialBackoff() {
     const backoff =
-      HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR * 2 ** this.retryAttempts;
-    return delay(backoff);
+      HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY *
+      HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR ** this.retryAttempts;
+
+    await delay(backoff);
   }
 
   private async fetch(type: keyof HttpSupportedResponses): Promise<Response> {
@@ -78,6 +78,7 @@ export class HttpForge {
       return response.clone()[type]();
     } catch (error) {
       if (this.shouldRetry(error)) {
+        this.retryAttempts += 1;
         await this.exponentialBackoff();
         return this.fetch(type);
       }
