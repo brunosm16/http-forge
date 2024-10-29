@@ -4,6 +4,13 @@ import type { HttpForgeOptions } from './types/http';
 
 import { configTestServer } from './fixtures/config-test-server';
 
+function flushPromises() {
+  return new Promise((resolve) =>
+    // eslint-disable-next-line no-promise-executor-return
+    jest.requireActual('timers').setImmediate(resolve)
+  );
+}
+
 describe('Http forge tests', () => {
   let serverTest: any = null;
 
@@ -127,7 +134,13 @@ describe('Http forge tests', () => {
         key2: 'value2',
       };
 
+      async function mockAsyncCall() {
+        await Promise.resolve();
+      }
+
       const customPropertyHook = async (options: HttpForgeOptions) => {
+        await mockAsyncCall();
+
         const reqBody = JSON.parse(options.body as string);
 
         reqBody.customProperty = true;

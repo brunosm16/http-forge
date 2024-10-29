@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax */
 import type {
   HttpForgeInput,
   HttpForgeOptions,
@@ -58,9 +59,13 @@ export class HttpForge {
   private async executePreRequestHooks() {
     const { hooks } = this.httpForgeOptions;
 
-    hooks.preRequestHooks.forEach(async (hook) => {
-      await hook(this.httpForgeOptions);
-    });
+    const preRequestHooks = hooks?.preRequestHooks;
+
+    if (preRequestHooks?.length) {
+      for await (const hook of preRequestHooks) {
+        await hook(this.httpForgeOptions);
+      }
+    }
   }
 
   private async exponentialBackoff() {
