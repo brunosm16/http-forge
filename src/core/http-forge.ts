@@ -83,12 +83,21 @@ export class HttpForge {
         return this.fetch(type);
       }
 
-      throw error;
+      if (this.httpForgeOptions.shouldHandleHttpErrors) {
+        throw error;
+      }
+
+      return error;
     }
   }
 
   private initializeOptions(options: HttpForgeOptions) {
-    const { headers, retryLength, timeoutLength } = options;
+    const {
+      headers,
+      retryLength,
+      shouldHandleHttpErrors = true,
+      timeoutLength,
+    } = options;
 
     const resolvedRetry = retryLength ?? HTTP_FORGE_DEFAULT_RETRY_LENGTH;
 
@@ -101,6 +110,7 @@ export class HttpForge {
       credentials: HTTP_FORGE_DEFAULT_CREDENTIALS,
       requestHeaders: resolvedHeaders,
       retryLength: resolvedRetry,
+      shouldHandleHttpErrors,
       timeoutLength: resolvedTimeout,
     };
   }

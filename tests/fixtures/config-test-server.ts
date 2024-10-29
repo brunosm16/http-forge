@@ -39,5 +39,9 @@ export const configTestServer = async () => {
     res.end(customHeader);
   });
 
+  server.get('/error', (req, res) => {
+    res.sendStatus(401);
+  });
+
   return server;
 };

@@ -104,5 +104,17 @@ describe('Http forge tests', () => {
 
       expect(result).toEqual(headers['x-custom-header']);
     });
+
+    it('Should not handle HTTP errors', async () => {
+      const endpoint = `${serverTest.url}/error`;
+
+      const response = httpForge
+        .get(endpoint, {
+          shouldHandleHttpErrors: false,
+        })
+        .text();
+
+      expect(response).resolves.toBeDefined();
+    });
   });
 });

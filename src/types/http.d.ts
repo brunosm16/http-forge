@@ -8,6 +8,7 @@ export type HttpForgeOptions = {
   jsonBody?: unknown;
   requestHeaders?: Headers;
   retryLength?: number;
+  shouldHandleHttpErrors?: boolean;
   timeoutLength?: number;
 } & RequestInit;
 
