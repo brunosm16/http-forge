@@ -3,6 +3,7 @@ import type {
   HttpForgeInput,
   HttpForgeOptions,
   HttpForgeResponseOptions,
+  HttpRequestHooks,
   HttpSupportedResponses,
 } from '@/types/http';
 
@@ -109,6 +110,7 @@ export class HttpForge {
   private initializeOptions(options: HttpForgeOptions) {
     const {
       headers,
+      hooks,
       retryLength,
       shouldHandleHttpErrors = true,
       timeoutLength,
@@ -120,9 +122,12 @@ export class HttpForge {
 
     const resolvedHeaders = new Headers(headers ?? {});
 
+    const resolvedHooks = this.resolveHooks(hooks);
+
     this.httpForgeOptions = {
       ...options,
       credentials: HTTP_FORGE_DEFAULT_CREDENTIALS,
+      hooks: resolvedHooks,
       requestHeaders: resolvedHeaders,
       retryLength: resolvedRetry,
       shouldHandleHttpErrors,
@@ -140,6 +145,16 @@ export class HttpForge {
   private isRetryStatusCode(error: HttpError): boolean {
     const { status } = error;
     return HTTP_ALLOWED_RETRY_STATUS_CODES.includes(status);
+  }
+
+  private resolveHooks(hooks: HttpRequestHooks) {
+    if (hooks) return hooks;
+
+    const defaultHooks: HttpRequestHooks = {
+      preRequestHooks: [],
+    };
+
+    return defaultHooks;
   }
 
   private responseOptions() {
