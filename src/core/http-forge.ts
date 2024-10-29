@@ -55,6 +55,14 @@ export class HttpForge {
     }
   }
 
+  private async executePreRequestHooks() {
+    const { hooks } = this.httpForgeOptions;
+
+    hooks.preRequestHooks.forEach(async (hook) => {
+      await hook(this.httpForgeOptions);
+    });
+  }
+
   private async exponentialBackoff() {
     const backoff =
       HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY *
@@ -65,6 +73,8 @@ export class HttpForge {
 
   private async fetch(type: keyof HttpSupportedResponses): Promise<Response> {
     try {
+      await this.executePreRequestHooks();
+
       const fetchFn = fetch(this.httpForgeInput, this.httpForgeOptions);
 
       const { timeoutLength } = this.httpForgeOptions;

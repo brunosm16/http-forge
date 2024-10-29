@@ -1,5 +1,7 @@
 import httpForge from '@/main';
 
+import type { HttpForgeOptions } from './types/http';
+
 import { configTestServer } from './fixtures/config-test-server';
 
 describe('Http forge tests', () => {
@@ -115,6 +117,40 @@ describe('Http forge tests', () => {
         .text();
 
       expect(response).resolves.toBeDefined();
+    });
+
+    it('Should execute preRequestHook', async () => {
+      const endpoint = `${serverTest.url}/json-test`;
+
+      const jsonBody = {
+        key: 'value',
+        key2: 'value2',
+      };
+
+      const customPropertyHook = async (options: HttpForgeOptions) => {
+        const reqBody = JSON.parse(options.body as string);
+
+        reqBody.customProperty = true;
+
+        // eslint-disable-next-line no-param-reassign
+        options.body = JSON.stringify(reqBody);
+      };
+
+      const preRequestHooks = [customPropertyHook];
+
+      const result = await httpForge
+        .post(endpoint, {
+          hooks: {
+            preRequestHooks,
+          },
+          jsonBody,
+        })
+        .json();
+
+      expect(result).toEqual({
+        ...jsonBody,
+        customProperty: true,
+      });
     });
   });
 });

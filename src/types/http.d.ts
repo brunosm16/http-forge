@@ -5,6 +5,7 @@ export type HttpError = {
 
 export type HttpForgeOptions = {
   [key: string]: unknown;
+  hooks?: HttpRequestHooks;
   jsonBody?: unknown;
   requestHeaders?: Headers;
   retryLength?: number;
@@ -47,3 +48,11 @@ export type HttpForgeMethods = {
 } & {
   extend: (defaultOptions: HttpForgeOptions) => HttpForgeMethods;
 };
+
+export type HttpRequestHooks = {
+  preRequestHooks: HttpRequestHookFunction[];
+};
+
+export type HttpRequestHookFunction = (
+  options: HttpRequestOptions
+) => Promise<void>;
