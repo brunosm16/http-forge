@@ -4,13 +4,6 @@ import type { HttpForgeOptions } from './types/http';
 
 import { configTestServer } from './fixtures/config-test-server';
 
-function flushPromises() {
-  return new Promise((resolve) =>
-    // eslint-disable-next-line no-promise-executor-return
-    jest.requireActual('timers').setImmediate(resolve)
-  );
-}
-
 describe('Http forge tests', () => {
   let serverTest: any = null;
 
