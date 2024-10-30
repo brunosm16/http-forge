@@ -155,4 +155,22 @@ describe('Retry logic', () => {
       );
     }
   );
+
+  it('Should not retry when retry-after header it is not provided', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    server.get('/retry-test', async (req, res) => {
+      res.status(429).end();
+    });
+
+    const promise = httpForge
+      .get(endpoint, {
+        retryLength: 0,
+      })
+      .text();
+
+    expect(promise).rejects.toThrow('Too Many Requests');
+  });
 });
