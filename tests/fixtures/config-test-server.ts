@@ -3,6 +3,15 @@ import * as createTestServer from 'create-test-server';
 export const configTestServer = async () => {
   const server = await createTestServer();
 
+  server.get('/', (req, res) => {
+    if (req.query.page === '/http://mock-query-page/') {
+      res.end('mock-query-page response');
+      return;
+    }
+
+    res.end('Root endpoint');
+  });
+
   server.get('/success', (req, res) => {
     res.end('Hey this is a successful GET response');
   });
@@ -41,6 +50,10 @@ export const configTestServer = async () => {
 
   server.get('/error', (req, res) => {
     res.sendStatus(401);
+  });
+
+  server.get('/api/users', (req, res) => {
+    res.end('Mock users response');
   });
 
   return server;

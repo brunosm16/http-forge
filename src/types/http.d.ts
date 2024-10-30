@@ -7,6 +7,7 @@ export type HttpForgeOptions = {
   [key: string]: unknown;
   hooks?: HttpRequestHooks;
   jsonBody?: unknown;
+  prefixURL?: HttpForgeInput | null;
   requestHeaders?: Headers;
   retryLength?: number;
   shouldHandleHttpErrors?: boolean;

@@ -30,9 +30,9 @@ export class HttpForge {
     httpForgeInput: HttpForgeInput,
     httpForgeOptions: HttpForgeOptions
   ) {
-    this.httpForgeInput = httpForgeInput;
-
     this.initializeOptions(httpForgeOptions);
+
+    this.httpForgeInput = this.initializeInput(httpForgeInput);
 
     this.appendJSONBody();
   }
@@ -77,6 +77,18 @@ export class HttpForge {
     await delay(backoff);
   }
 
+  private extractUrlFromHttpForgeInput(httpForgeInput: HttpForgeInput) {
+    if (httpForgeInput instanceof URL) {
+      return httpForgeInput.toString();
+    }
+
+    if (httpForgeInput instanceof Request) {
+      return httpForgeInput.url;
+    }
+
+    return httpForgeInput;
+  }
+
   private async fetch(type: keyof HttpSupportedResponses): Promise<Response> {
     try {
       await this.executePreRequestHooks();
@@ -107,10 +119,31 @@ export class HttpForge {
     }
   }
 
+  private initializeInput(httpForgeInput: HttpForgeInput) {
+    const { prefixURL } = this.httpForgeOptions;
+
+    const urlInput = this.extractUrlFromHttpForgeInput(httpForgeInput);
+
+    if (!prefixURL) {
+      return urlInput;
+    }
+
+    if (urlInput?.startsWith('/')) {
+      throw new Error(
+        `'HttpForgeInput' cannot starts with '/' when using a prefixURL`
+      );
+    }
+
+    const normalizedInput = prefixURL + urlInput;
+
+    return normalizedInput;
+  }
+
   private initializeOptions(options: HttpForgeOptions) {
     const {
       headers,
       hooks,
+      prefixURL,
       retryLength,
       shouldHandleHttpErrors = true,
       timeoutLength,
@@ -124,10 +157,13 @@ export class HttpForge {
 
     const resolvedHooks = this.resolveHooks(hooks);
 
+    const resolvedPrefixURL = this.resolvePrefixURL(prefixURL);
+
     this.httpForgeOptions = {
       ...options,
       credentials: HTTP_FORGE_DEFAULT_CREDENTIALS,
       hooks: resolvedHooks,
+      prefixURL: resolvedPrefixURL,
       requestHeaders: resolvedHeaders,
       retryLength: resolvedRetry,
       shouldHandleHttpErrors,
@@ -155,6 +191,19 @@ export class HttpForge {
     };
 
     return defaultHooks;
+  }
+
+  private resolvePrefixURL(prefix: HttpForgeInput | null) {
+    if (!prefix) return null;
+
+    const prefixString = this.extractUrlFromHttpForgeInput(prefix);
+
+    if (!prefixString.endsWith('/')) {
+      const normalizedPrefix = prefixString.concat('/');
+      return normalizedPrefix;
+    }
+
+    return prefix;
   }
 
   private responseOptions() {
