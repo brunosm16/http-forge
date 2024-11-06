@@ -17,6 +17,7 @@ const config: Config.InitialOptions = {
     '<rootDir>/tests/**/*.spec.(ts)',
     '<rootDir>/tests/*.test.(ts)',
     '<rootDir>/tests/*.spec.(ts)',
+    '<rootDir>/src/**/*.spec.(ts)',
   ],
   verbose: true,
 };

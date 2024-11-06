@@ -8,8 +8,10 @@ import type {
 } from '@/types/http';
 
 import {
+  HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
   HTTP_ALLOWED_RETRY_STATUS_CODES,
   HTTP_FORGE_DEFAULT_CREDENTIALS,
+  HTTP_FORGE_DEFAULT_RETRY_AFTER_DELAY,
   HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY,
   HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR,
   HTTP_FORGE_DEFAULT_RETRY_LENGTH,
@@ -17,7 +19,7 @@ import {
   HTTP_SUPPORTED_RESPONSES,
 } from '@/constants';
 import { HttpError, TimeoutError } from '@/errors';
-import { delay, timeout } from '@/utils';
+import { delay, isTimeStamp, timeout } from '@/utils';
 
 export class HttpForge {
   private httpForgeInput: HttpForgeInput;
@@ -55,6 +57,15 @@ export class HttpForge {
       );
       this.httpForgeOptions.body = JSON.stringify(jsonBody);
     }
+  }
+
+  private async delayRetry(error: any) {
+    if (this.isRetryAfter(error)) {
+      await this.retryAfter(error);
+      return;
+    }
+
+    await this.exponentialBackoff();
   }
 
   private async executePreRequestHooks() {
@@ -107,7 +118,7 @@ export class HttpForge {
     } catch (error) {
       if (this.shouldRetry(error)) {
         this.retryAttempts += 1;
-        await this.exponentialBackoff();
+        await this.delayRetry(error);
         return this.fetch(type);
       }
 
@@ -117,6 +128,22 @@ export class HttpForge {
 
       return error;
     }
+  }
+
+  private getRetryAfterNumber(retryAfter: any) {
+    const retryAfterNumber = Number(retryAfter);
+
+    if (Number.isNaN(retryAfterNumber)) {
+      throw new Error(`'Retry-After' header must be a number or a timestamp`);
+    }
+
+    const retryAfterDelay = retryAfter * HTTP_FORGE_DEFAULT_RETRY_AFTER_DELAY;
+
+    return retryAfterDelay;
+  }
+
+  private getRetryAfterTimeStamp(retryAfterHeader: any) {
+    return Date.parse(retryAfterHeader) - Date.now();
   }
 
   private initializeInput(httpForgeInput: HttpForgeInput) {
@@ -171,6 +198,17 @@ export class HttpForge {
     };
   }
 
+  private isRetryAfter(error: unknown) {
+    const anyError = error as any;
+    const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
+    const errorStatusCode = anyError?.response?.status;
+
+    const hasRetryAfterStatusCode =
+      HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES.includes(errorStatusCode);
+
+    return retryAfterHeader && hasRetryAfterStatusCode;
+  }
+
   private isRetryError(error: unknown): boolean {
     const isGenericHttpError = error instanceof HttpError;
     const isTimeoutError = error instanceof TimeoutError;
@@ -181,6 +219,17 @@ export class HttpForge {
   private isRetryStatusCode(error: HttpError): boolean {
     const { status } = error;
     return HTTP_ALLOWED_RETRY_STATUS_CODES.includes(status);
+  }
+
+  private parseRetryAfter(error: any) {
+    const anyError = error as any;
+    const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
+
+    if (isTimeStamp(retryAfterHeader)) {
+      return this.getRetryAfterTimeStamp(retryAfterHeader);
+    }
+
+    return this.getRetryAfterNumber(retryAfterHeader);
   }
 
   private resolveHooks(hooks: HttpRequestHooks) {
@@ -220,6 +269,11 @@ export class HttpForge {
     );
 
     return responses;
+  }
+
+  private async retryAfter(error: unknown) {
+    const retryAfter = this.parseRetryAfter(error);
+    await delay(retryAfter);
   }
 
   private shouldRetry(error: unknown): boolean {
