@@ -87,6 +87,28 @@ export class HttpForge {
     }
   }
 
+  private async executePreResponseHooks(response: Response) {
+    const { hooks } = this.httpForgeOptions;
+
+    const preResponseHooks = hooks?.preResponseHooks;
+
+    if (!preResponseHooks?.length) {
+      return response;
+    }
+
+    let responseResult = response;
+
+    for await (const hook of preResponseHooks) {
+      const hookResponse = await hook(response.clone());
+
+      if (hookResponse instanceof Response) {
+        responseResult = hookResponse;
+      }
+    }
+
+    return responseResult;
+  }
+
   private async exponentialBackoff() {
     const backoff =
       HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY *
@@ -117,11 +139,13 @@ export class HttpForge {
 
       const response = await timeout(fetchFn, timeoutLength);
 
-      if (!response?.ok) {
+      const responseHook = await this.executePreResponseHooks(response);
+
+      if (!responseHook?.ok) {
         throw new HttpError(response);
       }
 
-      return response.clone()[type]();
+      return responseHook.clone()[type]();
     } catch (error) {
       if (this.shouldRetry(error)) {
         this.retryAttempts += 1;
@@ -238,6 +262,7 @@ export class HttpForge {
 
     const defaultHooks: HttpForgeHooks = {
       preRequestHooks: [],
+      preResponseHooks: [],
     };
 
     return defaultHooks;

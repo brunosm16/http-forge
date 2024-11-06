@@ -51,9 +51,14 @@ export type HttpForgeMethods = {
 };
 
 export type HttpForgeHooks = {
-  preRequestHooks: HttpRequestHookFunction[];
+  preRequestHooks?: HttpPreRequestHookFunction[];
+  preResponseHooks?: HttpPreResponseHookFunction[];
 };
 
-export type HttpRequestHookFunction = (
+export type HttpPreRequestHookFunction = (
   options: HttpRequestOptions
 ) => Promise<void>;
+
+export type HttpPreResponseHookFunction = (
+  response: Response
+) => Promise<Response>;
