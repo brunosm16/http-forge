@@ -44,10 +44,10 @@ export type HttpForgeResponseOptions = Record<
 export type HttpForgeMethods = {
   [key in HttpSupportedMethods]: (
     httpForgeInput: HttpForgeInput,
-    defaultOptions: HttpForgeOptions
+    defaultOptions?: HttpForgeOptions
   ) => HttpForgeResponseOptions;
 } & {
-  extend: (defaultOptions: HttpForgeOptions) => HttpForgeMethods;
+  extend: (defaultOptions?: HttpForgeOptions) => HttpForgeMethods;
 };
 
 export type HttpRequestHooks = {

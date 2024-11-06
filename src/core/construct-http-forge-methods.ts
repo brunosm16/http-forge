@@ -28,7 +28,7 @@ const buildHttpForge = (
 };
 
 export const constructHttpForgeMethods = (
-  defaultOptions: HttpForgeOptions = {}
+  defaultOptions?: HttpForgeOptions
 ) => {
   const httpForgeByMethods = HTTP_SUPPORTED_METHODS.reduce((acc, method) => {
     const methodOption = method as keyof HttpForgeMethods;
