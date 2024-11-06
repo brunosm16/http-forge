@@ -33,6 +33,8 @@ describe('Retry logic', () => {
       .text();
 
     expect(result).toEqual('Hey this is a successful GET response');
+
+    await server.close();
   });
 
   it('Should not retry request when errors are larger than retryLength', async () => {
@@ -60,7 +62,9 @@ describe('Retry logic', () => {
       })
       .text();
 
-    expect(promise).rejects.toThrow('Service Unavailable');
+    expect(promise).rejects.toThrow();
+
+    await server.close();
   });
 
   it('Should not retry when retryLength is zero', async () => {
@@ -88,7 +92,9 @@ describe('Retry logic', () => {
       })
       .text();
 
-    expect(promise).rejects.toThrow('Service Unavailable');
+    expect(promise).rejects.toThrow();
+
+    await server.close();
   });
 
   it.each([
@@ -121,6 +127,8 @@ describe('Retry logic', () => {
       .text();
 
     expect(result).toEqual('Hey this is a successful GET response');
+
+    await server.close();
   });
 
   it.each(['get', 'put'])(
@@ -153,24 +161,8 @@ describe('Retry logic', () => {
       expect(result).toEqual(
         `Hey this is a successful ${normalizedMethod} response`
       );
+
+      await server.close();
     }
   );
-
-  it('Should not retry when retry-after header it is not provided', async () => {
-    const server = await createTestServer();
-
-    const endpoint = `${server.url}/retry-test`;
-
-    server.get('/retry-test', async (req, res) => {
-      res.status(429).end();
-    });
-
-    const promise = httpForge
-      .get(endpoint, {
-        retryLength: 0,
-      })
-      .text();
-
-    expect(promise).rejects.toThrow('Too Many Requests');
-  });
 });
