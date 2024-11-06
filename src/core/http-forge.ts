@@ -1,9 +1,9 @@
 /* eslint-disable no-restricted-syntax */
 import type {
+  HttpForgeHooks,
   HttpForgeInput,
   HttpForgeOptions,
   HttpForgeResponseOptions,
-  HttpRequestHooks,
   HttpSupportedResponses,
 } from '@/types/http';
 
@@ -233,10 +233,10 @@ export class HttpForge {
     return this.getRetryAfterNumber(retryAfterHeader);
   }
 
-  private resolveHooks(hooks: HttpRequestHooks) {
+  private resolveHooks(hooks: HttpForgeHooks) {
     if (hooks) return hooks;
 
-    const defaultHooks: HttpRequestHooks = {
+    const defaultHooks: HttpForgeHooks = {
       preRequestHooks: [],
     };
 
