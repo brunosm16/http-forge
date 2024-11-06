@@ -66,4 +66,41 @@ describe('Retry after logic', () => {
 
     await server.close();
   });
+
+  it('Should retry when retry-after header it is provided as timestamp', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+    const retryLimit = 2;
+
+    const retryDelay = 2 * 1000;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        const timeStamp = Date.now() + retryDelay;
+
+        res.writeHead(429, {
+          'Retry-After': new Date(timeStamp).toUTCString(),
+        });
+
+        res.end('Too Many Requests');
+      } else {
+        res.end('Successful request');
+      }
+    });
+
+    const result = await httpForge
+      .get(endpoint, {
+        retryLength: 0,
+      })
+      .text();
+
+    expect(result).toEqual('Successful request');
+
+    await server.close();
+  });
 });
