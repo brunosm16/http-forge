@@ -263,5 +263,54 @@ describe('Http forge tests', () => {
 
       expect(result).toEqual('mock-query-page response');
     });
+
+    it('Should accept requests without hooks', async () => {
+      const endpoint = `${serverTest.url}/success`;
+
+      const result = await httpForge
+        .delete(endpoint, {
+          hooks: {
+            preRequestHooks: [],
+            preResponseHooks: [],
+          },
+        })
+        .text();
+
+      expect(result).toEqual('Hey this is a successful DELETE response');
+    });
+
+    it('Should modify response with after-response-hook', async () => {
+      const endpoint = `${serverTest.url}/json-test`;
+
+      const customResponseHook = async (response: Response) => {
+        const updatedResponse = new Response(
+          'This is a mock response buffer for testing purposes',
+          {
+            headers: {
+              'Content-Length': '48',
+              'Content-Type': 'text/plain',
+            },
+            status: 200,
+            statusText: 'OK',
+          }
+        );
+
+        return updatedResponse;
+      };
+
+      const preResponseHooks = [customResponseHook];
+
+      const result = await httpForge
+        .get(endpoint, {
+          hooks: {
+            preResponseHooks,
+          },
+        })
+        .text();
+
+      expect(result).toEqual(
+        'This is a mock response buffer for testing purposes'
+      );
+    });
   });
 });
