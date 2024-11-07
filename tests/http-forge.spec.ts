@@ -280,7 +280,7 @@ describe('Http forge tests', () => {
     });
 
     it('Should modify response with after-response-hook', async () => {
-      const endpoint = `${serverTest.url}/json-test`;
+      const endpoint = `${serverTest.url}/success`;
 
       const customResponseHook = async (response: Response) => {
         const updatedResponse = new Response(
@@ -311,6 +311,103 @@ describe('Http forge tests', () => {
       expect(result).toEqual(
         'This is a mock response buffer for testing purposes'
       );
+    });
+
+    it('Should modify response with more than one after-response-hook', async () => {
+      const endpoint = `${serverTest.url}/success`;
+
+      const firstResponse = 'First response mock message';
+      const secondResponse = 'Second response mock message';
+      const expectedFinalResponse = `${firstResponse} - ${secondResponse}`;
+
+      const customResponseHook = async (response: Response) => {
+        const updatedResponse = new Response(firstResponse, {
+          headers: {
+            'Content-Length': '48',
+            'Content-Type': 'text/plain',
+          },
+          status: 200,
+          statusText: 'OK',
+        });
+
+        return updatedResponse;
+      };
+
+      const secondResponseHook = async (response: Response) => {
+        const previousResponse = await response.text();
+        const finalResponse = `${previousResponse} - ${secondResponse}`;
+
+        const updatedResponse = new Response(finalResponse, {
+          status: 200,
+          statusText: 'OK',
+        });
+
+        return updatedResponse;
+      };
+
+      const preResponseHooks = [customResponseHook, secondResponseHook];
+
+      const result = await httpForge
+        .get(endpoint, {
+          hooks: {
+            preResponseHooks,
+          },
+        })
+        .text();
+
+      expect(result).toEqual(expectedFinalResponse);
+    });
+
+    it('Should modify response with after-response-hook when an error occurs', async () => {
+      const endpoint = `${serverTest.url}/error`;
+
+      const customResponseHook = async (response: Response) => {
+        const { status } = response;
+        const message = `Status before intercepting: ${status}`;
+
+        const updatedResponse = new Response(message, {
+          headers: {
+            'Content-Length': '48',
+            'Content-Type': 'text/plain',
+          },
+          status: 200,
+          statusText: 'OK',
+        });
+
+        return updatedResponse;
+      };
+
+      const preResponseHooks = [customResponseHook];
+
+      const result = await httpForge
+        .get(endpoint, {
+          hooks: {
+            preResponseHooks,
+          },
+        })
+        .text();
+
+      expect(result).toEqual('Status before intercepting: 401');
+    });
+
+    it('Should throw an error on after-response-hook', async () => {
+      const endpoint = `${serverTest.url}/error`;
+
+      const customResponseHook = async (response: Response) => {
+        throw new Error('Hook error');
+      };
+
+      const preResponseHooks = [customResponseHook];
+
+      const result = httpForge
+        .get(endpoint, {
+          hooks: {
+            preResponseHooks,
+          },
+        })
+        .text();
+
+      expect(result).rejects.toThrow();
     });
   });
 });

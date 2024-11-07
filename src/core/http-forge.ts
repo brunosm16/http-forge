@@ -99,7 +99,7 @@ export class HttpForge {
     let responseResult = response;
 
     for await (const hook of preResponseHooks) {
-      const hookResponse = await hook(response.clone());
+      const hookResponse = await hook(responseResult.clone());
 
       if (hookResponse instanceof Response) {
         responseResult = hookResponse;
