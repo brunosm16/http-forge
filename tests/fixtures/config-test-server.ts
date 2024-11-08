@@ -56,5 +56,17 @@ export const configTestServer = async () => {
     res.end('Mock users response');
   });
 
+  server.get('/search-params-test', (req, res) => {
+    const urlLength = req?.url?.length;
+    const searchParamChar = req?.url?.indexOf('?');
+
+    if (searchParamChar === -1) {
+      res.end(req.url);
+    }
+
+    const searchParam = req.url.slice(searchParamChar, urlLength);
+    res.end(searchParam);
+  });
+
   return server;
 };

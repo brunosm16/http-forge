@@ -4,6 +4,7 @@ import type {
   HttpForgeInput,
   HttpForgeOptions,
   HttpForgeResponseOptions,
+  HttpForgeSearchParams,
   HttpSupportedResponses,
 } from '@/types/http';
 
@@ -57,6 +58,45 @@ export class HttpForge {
       );
       this.httpForgeOptions.body = JSON.stringify(jsonBody);
     }
+  }
+
+  private appendPrefixToInput(httpForgeInput: HttpForgeInput) {
+    const { prefixURL } = this.httpForgeOptions;
+
+    const urlInput = this.extractUrlFromHttpForgeInput(httpForgeInput);
+
+    if (!prefixURL) {
+      return urlInput;
+    }
+
+    if (urlInput?.startsWith('/')) {
+      throw new Error(
+        `'HttpForgeInput' cannot starts with '/' when using a prefixURL`
+      );
+    }
+
+    const normalizedInput = prefixURL + urlInput;
+
+    const { searchParams } = this.httpForgeOptions;
+
+    if (searchParams) {
+      return this.appendSearchParamsToInput(searchParams, normalizedInput);
+    }
+
+    return normalizedInput;
+  }
+
+  private appendSearchParamsToInput(
+    searchParams: HttpForgeSearchParams,
+    httpInput: string
+  ) {
+    const resolvedSearchParams = this.resolveSearchParams(searchParams);
+
+    const url = new URL(httpInput);
+
+    url.search = resolvedSearchParams.toString();
+
+    return url.toString();
   }
 
   private async applyRetryAfterDelay(error: unknown) {
@@ -183,23 +223,15 @@ export class HttpForge {
   }
 
   private initializeInput(httpForgeInput: HttpForgeInput) {
-    const { prefixURL } = this.httpForgeOptions;
+    const prefixedURL = this.appendPrefixToInput(httpForgeInput);
 
-    const urlInput = this.extractUrlFromHttpForgeInput(httpForgeInput);
+    const { searchParams } = this.httpForgeOptions;
 
-    if (!prefixURL) {
-      return urlInput;
+    if (searchParams) {
+      return this.appendSearchParamsToInput(searchParams, prefixedURL);
     }
 
-    if (urlInput?.startsWith('/')) {
-      throw new Error(
-        `'HttpForgeInput' cannot starts with '/' when using a prefixURL`
-      );
-    }
-
-    const normalizedInput = prefixURL + urlInput;
-
-    return normalizedInput;
+    return prefixedURL;
   }
 
   private initializeOptions(options: HttpForgeOptions) {
@@ -208,6 +240,7 @@ export class HttpForge {
       hooks,
       prefixURL,
       retryLength,
+      searchParams,
       shouldHandleHttpErrors = true,
       timeoutLength,
     } = options;
@@ -222,6 +255,8 @@ export class HttpForge {
 
     const resolvedPrefixURL = this.resolvePrefixURL(prefixURL);
 
+    const resolvedSearchParams = this.resolveSearchParams(searchParams);
+
     this.httpForgeOptions = {
       ...options,
       credentials: HTTP_FORGE_DEFAULT_CREDENTIALS,
@@ -229,6 +264,7 @@ export class HttpForge {
       prefixURL: resolvedPrefixURL,
       requestHeaders: resolvedHeaders,
       retryLength: resolvedRetry,
+      searchParams,
       shouldHandleHttpErrors,
       timeoutLength: resolvedTimeout,
     };
@@ -279,6 +315,14 @@ export class HttpForge {
     }
 
     return prefix;
+  }
+
+  private resolveSearchParams(searchParams: HttpForgeSearchParams) {
+    if (!searchParams) {
+      return null;
+    }
+
+    return new URLSearchParams(searchParams);
   }
 
   private responseOptions() {

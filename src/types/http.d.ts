@@ -3,6 +3,12 @@ export type HttpError = {
   statusCode?: string;
 };
 
+export type HttpForgeSearchParams =
+  | Record<string, string>
+  | URLSearchParams
+  | string
+  | string[][];
+
 export type HttpForgeOptions = {
   [key: string]: unknown;
   hooks?: HttpForgeHooks;
@@ -10,6 +16,7 @@ export type HttpForgeOptions = {
   prefixURL?: HttpForgeInput | null;
   requestHeaders?: Headers;
   retryLength?: number;
+  searchParams?: HttpForgeSearchParams;
   shouldHandleHttpErrors?: boolean;
   timeoutLength?: number;
 } & RequestInit;
