@@ -255,8 +255,6 @@ export class HttpForge {
 
     const resolvedPrefixURL = this.resolvePrefixURL(prefixURL);
 
-    const resolvedSearchParams = this.resolveSearchParams(searchParams);
-
     this.httpForgeOptions = {
       ...options,
       credentials: HTTP_FORGE_DEFAULT_CREDENTIALS,
