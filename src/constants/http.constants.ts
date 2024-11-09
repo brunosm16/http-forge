@@ -27,7 +27,7 @@ export const HTTP_ALLOWED_RETRY_METHODS = [
   'put',
   'head',
   'delete',
-] as const;
+] as string[];
 
 export const HTTP_ALLOWED_RETRY_STATUS_CODES = [
   HTTP_STATUS_CODES.STATUS_CODE_408,

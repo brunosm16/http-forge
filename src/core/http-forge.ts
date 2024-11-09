@@ -10,6 +10,7 @@ import type {
 
 import {
   HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
+  HTTP_ALLOWED_RETRY_METHODS,
   HTTP_ALLOWED_RETRY_STATUS_CODES,
   HTTP_FORGE_DEFAULT_CREDENTIALS,
   HTTP_FORGE_DEFAULT_RETRY_AFTER_DELAY,
@@ -275,6 +276,10 @@ export class HttpForge {
     return isGenericHttpError && !isTimeoutError;
   }
 
+  private isRetryMethod(method: string) {
+    return HTTP_ALLOWED_RETRY_METHODS.includes(method?.toLowerCase());
+  }
+
   private isRetryStatusCode(error: HttpError): boolean {
     const status = error?.response?.status;
     return HTTP_ALLOWED_RETRY_STATUS_CODES.includes(status);
@@ -345,14 +350,24 @@ export class HttpForge {
 
     const isValidRetryError = this.isRetryError(error);
     const isValidRetryStatusCode = this.isRetryStatusCode(error as HttpError);
+    const isValidRetryMethod = this.isRetryMethod(
+      this.httpForgeOptions?.method
+    );
 
-    return isValidRetryAttempt && isValidRetryError && isValidRetryStatusCode;
+    return (
+      isValidRetryAttempt &&
+      isValidRetryError &&
+      isValidRetryStatusCode &&
+      isValidRetryMethod
+    );
   }
 
   private shouldRetryAfter(error: unknown): boolean {
     const isValidRetryError = this.isRetryError(error);
     const isValidRetryAfter = this.errorHasRetryAfter(error);
-
-    return isValidRetryError && isValidRetryAfter;
+    const isValidRetryMethod = this.isRetryMethod(
+      this.httpForgeOptions?.method
+    );
+    return isValidRetryError && isValidRetryAfter && isValidRetryMethod;
   }
 }
