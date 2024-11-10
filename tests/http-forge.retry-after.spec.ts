@@ -34,6 +34,39 @@ describe('Retry after logic', () => {
     await server.close();
   });
 
+  it('Should not retry forbidden method', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+    const retryLimit = 2;
+
+    server.post('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.writeHead(429, {
+          'Retry-After': 2,
+        });
+
+        res.end('Too Many Requests');
+      } else {
+        res.end('Successful request');
+      }
+    });
+
+    const result = httpForge
+      .post(endpoint, {
+        retryLength: 0,
+      })
+      .text();
+
+    expect(result).rejects.toThrow();
+
+    await server.close();
+  });
+
   it('Should retry when retry-after header it is provided', async () => {
     const server = await createTestServer();
 

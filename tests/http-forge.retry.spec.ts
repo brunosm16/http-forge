@@ -165,4 +165,34 @@ describe('Retry logic', () => {
       await server.close();
     }
   );
+
+  it('Should not retry forbidden method', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    const retryLimit = 3;
+
+    let attempts = 0;
+
+    server.post('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.status(503).end();
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const result = httpForge
+      .post(endpoint, {
+        retryLength: 2,
+      })
+      .text();
+
+    expect(result).rejects.toThrow();
+
+    await server.close();
+  });
 });
