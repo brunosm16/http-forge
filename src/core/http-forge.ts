@@ -183,7 +183,7 @@ export class HttpForge {
       const responseHook = await this.executePreResponseHooks(response);
 
       if (!responseHook?.ok) {
-        throw new HttpError(response);
+        throw new HttpError(responseHook);
       }
 
       return responseHook.clone()[type]();
