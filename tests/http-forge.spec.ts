@@ -459,5 +459,37 @@ describe('Http forge tests', () => {
         '?email=jonhdoe%40gmail.com&isAdmin=true'
       );
     });
+
+    it('Should abort request using abort-controller', async () => {
+      const endpoint = `${serverTest.url}/success`;
+
+      const abortController = new AbortController();
+
+      const promise = httpForge.get(endpoint, {
+        signal: abortController.signal,
+      });
+
+      abortController.abort();
+
+      const result = promise.text();
+
+      expect(result).rejects.toThrow('This operation was aborted');
+    });
+
+    it('Should no abort request after fetch was dispatched', async () => {
+      const endpoint = `${serverTest.url}/success`;
+
+      const abortController = new AbortController();
+
+      const result = await httpForge
+        .get(endpoint, {
+          signal: abortController.signal,
+        })
+        .text();
+
+      abortController.abort();
+
+      expect(result).toEqual('Hey this is a successful GET response');
+    });
   });
 });
