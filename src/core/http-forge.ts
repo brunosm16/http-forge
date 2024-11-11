@@ -52,7 +52,13 @@ export class HttpForge {
   }
 
   private appendJSONBody() {
-    const { jsonBody } = this.httpForgeOptions;
+    const { body, jsonBody } = this.httpForgeOptions;
+
+    if (jsonBody && body) {
+      throw new Error(
+        `The property 'body' cannot be used together with the 'jsonBody' property.`
+      );
+    }
 
     if (jsonBody) {
       this.httpForgeOptions.requestHeaders.set(

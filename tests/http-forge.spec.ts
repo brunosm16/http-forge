@@ -491,5 +491,43 @@ describe('Http forge tests', () => {
 
       expect(result).toEqual('Hey this is a successful GET response');
     });
+
+    it('Should not allow a body with json-body property', async () => {
+      const endpoint = `${serverTest.url}/json-test`;
+
+      const jsonBody = {
+        key: 'value',
+        key2: 'value2',
+      };
+
+      let messageThrown = '';
+
+      try {
+        await httpForge
+          .post(endpoint, {
+            body: 'mock-body',
+            jsonBody,
+          })
+          .json();
+      } catch (err) {
+        messageThrown = err?.message;
+      }
+
+      expect(messageThrown).toEqual(
+        `The property 'body' cannot be used together with the 'jsonBody' property.`
+      );
+    });
+
+    it('Should allow a body without json-body property', async () => {
+      const endpoint = `${serverTest.url}/success`;
+
+      const result = await httpForge
+        .post(endpoint, {
+          body: 'mock-body',
+        })
+        .text();
+
+      expect(result).toEqual(`Hey this is a successful POST response`);
+    });
   });
 });
