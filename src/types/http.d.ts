@@ -11,6 +11,7 @@ export type HttpForgeSearchParams =
 
 export type HttpForgeOptions = {
   [key: string]: unknown;
+  abortController?: AbortController;
   hooks?: HttpForgeHooks;
   jsonBody?: unknown;
   prefixURL?: HttpForgeInput | null;
@@ -18,6 +19,7 @@ export type HttpForgeOptions = {
   retryLength?: number;
   searchParams?: HttpForgeSearchParams;
   shouldHandleHttpErrors?: boolean;
+  signal?: AbortSignal;
   timeoutLength?: number;
 } & RequestInit;
 

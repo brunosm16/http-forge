@@ -6,13 +6,18 @@ export const delay = (ms: number) =>
 
 export const timeout = (
   fn: Promise<Response>,
-  timeoutLength: number
+  timeoutLength: number,
+  abortController?: AbortController
 ): Promise<Response> =>
   new Promise((resolve, reject) => {
     fn.then(resolve, reject);
 
     (async () => {
       await delay(timeoutLength);
+
+      if (abortController) {
+        setTimeout(() => abortController.abort(), 1);
+      }
 
       reject(new TimeoutError());
     })();

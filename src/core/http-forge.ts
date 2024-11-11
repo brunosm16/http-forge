@@ -36,6 +36,8 @@ export class HttpForge {
   ) {
     this.initializeOptions(httpForgeOptions);
 
+    this.initializeSignal();
+
     this.httpForgeInput = this.initializeInput(httpForgeInput);
 
     this.appendJSONBody();
@@ -176,9 +178,9 @@ export class HttpForge {
 
       const fetchFn = fetch(this.httpForgeInput, this.httpForgeOptions);
 
-      const { timeoutLength } = this.httpForgeOptions;
+      const { abortController, timeoutLength } = this.httpForgeOptions;
 
-      const response = await timeout(fetchFn, timeoutLength);
+      const response = await timeout(fetchFn, timeoutLength, abortController);
 
       const responseHook = await this.executePreResponseHooks(response);
 
@@ -223,6 +225,11 @@ export class HttpForge {
     return Date.parse(retryAfterHeader) - Date.now();
   }
 
+  private initializeAbortController() {
+    const abortController = new AbortController();
+    this.httpForgeOptions.abortController = abortController;
+  }
+
   private initializeInput(httpForgeInput: HttpForgeInput) {
     const prefixedURL = this.appendPrefixToInput(httpForgeInput);
 
@@ -243,6 +250,7 @@ export class HttpForge {
       retryLength,
       searchParams,
       shouldHandleHttpErrors = true,
+      signal,
       timeoutLength,
     } = options;
 
@@ -265,8 +273,29 @@ export class HttpForge {
       retryLength: resolvedRetry,
       searchParams,
       shouldHandleHttpErrors,
+      signal,
       timeoutLength: resolvedTimeout,
     };
+  }
+
+  private initializeSignal() {
+    const { signal } = this.httpForgeOptions;
+
+    if (!signal) {
+      return;
+    }
+
+    this.initializeAbortController();
+
+    const { abortController } = this.httpForgeOptions;
+
+    const optionSignal = signal;
+
+    optionSignal.addEventListener('abort', () => {
+      abortController?.abort();
+    });
+
+    this.httpForgeOptions.signal = abortController.signal;
   }
 
   private isRetryError(error: unknown): boolean {
