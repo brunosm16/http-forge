@@ -48,8 +48,14 @@ export const constructHttpForgeMethods = (
     };
   }, {} as HttpForgeMethods);
 
-  httpForgeByMethods.extend = (defaultsExtend: HttpForgeOptions = {}) =>
-    constructHttpForgeMethods(defaultsExtend);
+  httpForgeByMethods.extend = (defaultsExtend: HttpForgeOptions = {}) => {
+    const options = deepMerge(
+      {},
+      { ...defaultOptions, ...defaultsExtend }
+    ) as HttpForgeOptions;
+
+    return constructHttpForgeMethods(options);
+  };
 
   return httpForgeByMethods;
 };
