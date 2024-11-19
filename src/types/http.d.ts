@@ -60,6 +60,7 @@ export type HttpForgeMethods = {
 };
 
 export type HttpForgeHooks = {
+  fileTransferHook?: FileTransferHookFunction;
   preRequestHooks?: HttpPreRequestHookFunction[];
   preResponseHooks?: HttpPreResponseHookFunction[];
 };
@@ -71,3 +72,14 @@ export type HttpPreRequestHookFunction = (
 export type HttpPreResponseHookFunction = (
   response: Response
 ) => Promise<Response>;
+
+export type FileTransferHookFunction = (
+  fileTransferProgress: FileTransferProgress,
+  chunk: Uint8Array
+) => Promise<void>;
+
+export type FileTransferProgress = {
+  bytesDownloaded: number;
+  percentage: number;
+  totalFileSize: number;
+};
