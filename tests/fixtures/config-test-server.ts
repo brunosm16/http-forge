@@ -1,4 +1,5 @@
 import * as createTestServer from 'create-test-server';
+import * as fs from 'fs';
 
 export const configTestServer = async () => {
   const server = await createTestServer();
@@ -66,6 +67,25 @@ export const configTestServer = async () => {
 
     const searchParam = req.url.slice(searchParamChar, urlLength);
     res.end(searchParam);
+  });
+
+  server.get('/file-transfer', (req, res) => {
+    const fileDir = `${__dirname}/sample-data.csv`;
+    const fileSize = fs.statSync(fileDir)?.size;
+    const readStream = fs.createReadStream(fileDir);
+
+    res.writeHead(200, {
+      'Content-Length': fileSize,
+    });
+
+    readStream.pipe(res);
+  });
+
+  server.get('/file-transfer-no-size', (req, res) => {
+    const fileDir = `${__dirname}/sample-data.csv`;
+    const readStream = fs.createReadStream(fileDir);
+
+    readStream.pipe(res);
   });
 
   return server;

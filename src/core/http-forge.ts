@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 import type {
+  FileTransferHookFunction,
   HttpForgeHooks,
   HttpForgeInput,
   HttpForgeOptions,
@@ -22,6 +23,8 @@ import {
 } from '@/constants';
 import { HttpError, TimeoutError } from '@/errors';
 import { delay, isTimeStamp, timeout } from '@/utils';
+
+import { makeReadTransferStream } from './streams';
 
 export class HttpForge {
   private httpForgeInput: HttpForgeInput;
@@ -139,9 +142,13 @@ export class HttpForge {
   private async executePreResponseHooks(response: Response) {
     const { hooks } = this.httpForgeOptions;
 
-    const preResponseHooks = hooks?.preResponseHooks;
+    const { fileTransferHook, preResponseHooks } = hooks;
 
     if (!preResponseHooks?.length) {
+      if (fileTransferHook) {
+        return this.streamFileTransfer(response, fileTransferHook);
+      }
+
       return response;
     }
 
@@ -153,6 +160,10 @@ export class HttpForge {
       if (hookResponse instanceof Response) {
         responseResult = hookResponse;
       }
+    }
+
+    if (fileTransferHook) {
+      return this.streamFileTransfer(responseResult, fileTransferHook);
     }
 
     return responseResult;
@@ -404,5 +415,17 @@ export class HttpForge {
       this.httpForgeOptions?.method
     );
     return isValidRetryError && isValidRetryAfter && isValidRetryMethod;
+  }
+
+  private streamFileTransfer(
+    response: Response,
+    fileTransferHook: FileTransferHookFunction
+  ) {
+    const readTransferStream = makeReadTransferStream(
+      response,
+      fileTransferHook
+    );
+
+    return new Response(readTransferStream);
   }
 }

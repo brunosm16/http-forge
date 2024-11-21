@@ -1,6 +1,10 @@
 import httpForge from '@/main';
 
-import type { HttpForgeOptions } from './types/http';
+import type {
+  FileTransferProgress,
+  HttpForgeHooks,
+  HttpForgeOptions,
+} from './types/http';
 
 import { configTestServer } from './fixtures/config-test-server';
 
@@ -528,6 +532,100 @@ describe('Http forge tests', () => {
         .text();
 
       expect(result).toEqual(`Hey this is a successful POST response`);
+    });
+
+    it('Should provide progress information', async () => {
+      const transferredData: Array<{
+        fileTransferProgress: FileTransferProgress;
+        transferredValue: string;
+      }> = [];
+
+      const endpoint = `${serverTest.url}/file-transfer`;
+
+      const fileTransferHook = (
+        fileTransferProgress: FileTransferProgress,
+        chunk: Uint8Array
+      ) => {
+        const transferredValue = String.fromCharCode(...chunk);
+
+        transferredData.push({
+          fileTransferProgress,
+          transferredValue,
+        });
+      };
+
+      const hooks: HttpForgeHooks = {
+        fileTransferHook,
+      };
+
+      await httpForge
+        .get(endpoint, {
+          hooks,
+        })
+        .text();
+
+      const initialPercentage =
+        transferredData[0]?.fileTransferProgress?.percentage;
+
+      const midArrayLength = transferredData.length / 2;
+
+      const midPercentage =
+        transferredData[midArrayLength]?.fileTransferProgress?.percentage;
+
+      const finalPercentage =
+        transferredData[transferredData.length - 1]?.fileTransferProgress
+          ?.percentage;
+
+      expect(initialPercentage).toEqual(0);
+      expect(midPercentage).toBeGreaterThan(0);
+      expect(finalPercentage).toEqual(1);
+    });
+
+    it('Should not provide progress information without file-size', async () => {
+      const transferredData: Array<{
+        fileTransferProgress: FileTransferProgress;
+        transferredValue: string;
+      }> = [];
+
+      const endpoint = `${serverTest.url}/file-transfer-no-size`;
+
+      const fileTransferHook = (
+        fileTransferProgress: FileTransferProgress,
+        chunk: Uint8Array
+      ) => {
+        const transferredValue = String.fromCharCode(...chunk);
+
+        transferredData.push({
+          fileTransferProgress,
+          transferredValue,
+        });
+      };
+
+      const hooks: HttpForgeHooks = {
+        fileTransferHook,
+      };
+
+      await httpForge
+        .get(endpoint, {
+          hooks,
+        })
+        .text();
+
+      const initialPercentage =
+        transferredData[0]?.fileTransferProgress?.percentage;
+
+      const midArrayLength = transferredData.length / 2;
+
+      const midPercentage =
+        transferredData[midArrayLength]?.fileTransferProgress?.percentage;
+
+      const finalPercentage =
+        transferredData[transferredData.length - 1]?.fileTransferProgress
+          ?.percentage;
+
+      expect(initialPercentage).toEqual(0);
+      expect(midPercentage).toEqual(0);
+      expect(finalPercentage).toEqual(0);
     });
   });
 });

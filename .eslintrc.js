@@ -80,7 +80,7 @@ module.exports = {
           {
             format: ['PascalCase'],
             leadingUnderscore: 'allow',
-            prefix: ['is', 'has', 'should'],
+            prefix: ['is', 'has', 'should', 'done'],
             selector: 'variable',
             types: ['boolean'],
           },

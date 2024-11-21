@@ -76,10 +76,10 @@ export type HttpPreResponseHookFunction = (
 export type FileTransferHookFunction = (
   fileTransferProgress: FileTransferProgress,
   chunk: Uint8Array
-) => Promise<void>;
+) => void;
 
 export type FileTransferProgress = {
   bytesDownloaded: number;
+  fileSize: number;
   percentage: number;
-  totalFileSize: number;
 };
