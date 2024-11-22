@@ -2,6 +2,7 @@ import {
   HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
   HTTP_ALLOWED_RETRY_METHODS,
   HTTP_ALLOWED_RETRY_STATUS_CODES,
+  HTTP_FORGE_DEFAULT_RETRY_LENGTH,
 } from '@/constants';
 
 import { buildRetryPolicyConfig } from './retry-policy';
@@ -56,5 +57,27 @@ describe('retry-policy', () => {
     });
 
     expect(options.allowedRetryStatusCodes).toEqual(statusCodes);
+  });
+
+  it(`Should throw an error if retry-length is negative`, () => {
+    expect(() =>
+      buildRetryPolicyConfig({
+        retryLength: -10,
+      })
+    ).toThrow(`'retry-length' should be a positive integer`);
+  });
+
+  it(`Should use fallback option for 'retry-length'`, () => {
+    const options = buildRetryPolicyConfig({});
+
+    expect(options.retryLength).toEqual(HTTP_FORGE_DEFAULT_RETRY_LENGTH);
+  });
+
+  it(`Should set retry policy for 'retry-length'`, () => {
+    const options = buildRetryPolicyConfig({
+      retryLength: 8,
+    });
+
+    expect(options.retryLength).toEqual(8);
   });
 });
