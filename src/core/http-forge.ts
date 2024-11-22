@@ -7,6 +7,7 @@ import type {
   HttpForgeResponseOptions,
   HttpForgeSearchParams,
   HttpSupportedResponses,
+  RetryPolicyConfig,
 } from '@/types/http';
 
 import {
@@ -108,8 +109,16 @@ export class HttpForge {
     return url.toString();
   }
 
-  private async applyRetryAfterDelay(error: unknown) {
+  private async applyRetryAfterDelay(
+    error: unknown,
+    retryPolicy: RetryPolicyConfig
+  ) {
     const retryAfter = this.parseRetryAfter(error);
+
+    if (retryAfter > retryPolicy?.retryAfterLimit) {
+      return;
+    }
+
     await delay(retryAfter);
   }
 
@@ -206,14 +215,17 @@ export class HttpForge {
 
       return responseHook.clone()[type]();
     } catch (error) {
-      if (this.shouldRetry(error)) {
-        this.retryAttempts += 1;
-        await this.exponentialBackoff();
+      if (this.shouldRetryAfter(error)) {
+        await this.applyRetryAfterDelay(
+          error,
+          this.httpForgeOptions?.retryPolicy
+        );
         return this.fetch(type);
       }
 
-      if (this.shouldRetryAfter(error)) {
-        await this.applyRetryAfterDelay(error);
+      if (this.shouldRetry(error)) {
+        this.retryAttempts += 1;
+        await this.exponentialBackoff();
         return this.fetch(type);
       }
 
