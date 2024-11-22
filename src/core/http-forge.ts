@@ -10,20 +10,17 @@ import type {
 } from '@/types/http';
 
 import {
-  HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
-  HTTP_ALLOWED_RETRY_METHODS,
-  HTTP_ALLOWED_RETRY_STATUS_CODES,
   HTTP_FORGE_DEFAULT_CREDENTIALS,
   HTTP_FORGE_DEFAULT_RETRY_AFTER_DELAY,
   HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY,
   HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR,
-  HTTP_FORGE_DEFAULT_RETRY_LENGTH,
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
   HTTP_SUPPORTED_RESPONSES,
 } from '@/constants';
 import { HttpError, TimeoutError } from '@/errors';
 import { delay, isTimeStamp, timeout } from '@/utils';
 
+import { buildRetryPolicyConfig } from './retry-policy';
 import { makeReadTransferStream } from './streams';
 
 export class HttpForge {
@@ -121,8 +118,10 @@ export class HttpForge {
     const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
     const errorStatusCode = anyError?.response?.status;
 
+    const { allowedRetryAfterStatusCodes } = this.httpForgeOptions.retryPolicy;
+
     const hasRetryAfterStatusCode =
-      HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES.includes(errorStatusCode);
+      allowedRetryAfterStatusCodes.includes(errorStatusCode);
 
     return retryAfterHeader && hasRetryAfterStatusCode;
   }
@@ -264,14 +263,14 @@ export class HttpForge {
       headers,
       hooks,
       prefixURL,
-      retryLength,
+      retryPolicy,
       searchParams,
       shouldHandleHttpErrors = true,
       signal,
       timeoutLength,
     } = options;
 
-    const resolvedRetry = retryLength ?? HTTP_FORGE_DEFAULT_RETRY_LENGTH;
+    const resolvedRetry = buildRetryPolicyConfig(retryPolicy);
 
     const resolvedTimeout = timeoutLength ?? HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH;
 
@@ -287,7 +286,7 @@ export class HttpForge {
       hooks: resolvedHooks,
       prefixURL: resolvedPrefixURL,
       requestHeaders: resolvedHeaders,
-      retryLength: resolvedRetry,
+      retryPolicy: resolvedRetry,
       searchParams,
       shouldHandleHttpErrors,
       signal,
@@ -323,12 +322,15 @@ export class HttpForge {
   }
 
   private isRetryMethod(method: string) {
-    return HTTP_ALLOWED_RETRY_METHODS.includes(method?.toLowerCase());
+    const { allowedRetryMethods } = this.httpForgeOptions.retryPolicy;
+
+    return allowedRetryMethods.includes(method?.toLowerCase());
   }
 
   private isRetryStatusCode(error: HttpError): boolean {
+    const { allowedRetryStatusCodes } = this.httpForgeOptions.retryPolicy;
     const status = error?.response?.status;
-    return HTTP_ALLOWED_RETRY_STATUS_CODES.includes(status);
+    return allowedRetryStatusCodes.includes(status);
   }
 
   private parseRetryAfter(error: unknown) {
@@ -391,8 +393,9 @@ export class HttpForge {
   }
 
   private shouldRetry(error: unknown): boolean {
-    const isValidRetryAttempt =
-      this.retryAttempts < this.httpForgeOptions.retryLength;
+    const { retryLength } = this.httpForgeOptions.retryPolicy;
+
+    const isValidRetryAttempt = this.retryAttempts < retryLength;
 
     const isValidRetryError = this.isRetryError(error);
     const isValidRetryStatusCode = this.isRetryStatusCode(error as HttpError);

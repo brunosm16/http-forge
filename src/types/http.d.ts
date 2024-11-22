@@ -16,7 +16,7 @@ export type HttpForgeOptions = {
   jsonBody?: unknown;
   prefixURL?: HttpForgeInput | null;
   requestHeaders?: Headers;
-  retryLength?: number;
+  retryPolicy?: RetryPolicyConfig;
   searchParams?: HttpForgeSearchParams;
   shouldHandleHttpErrors?: boolean;
   signal?: AbortSignal;
