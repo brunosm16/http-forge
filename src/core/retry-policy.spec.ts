@@ -1,4 +1,7 @@
-import { HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES } from '@/constants';
+import {
+  HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
+  HTTP_ALLOWED_RETRY_METHODS,
+} from '@/constants';
 
 import { buildRetryPolicyConfig } from './retry-policy';
 
@@ -19,5 +22,20 @@ describe('retry-policy', () => {
     });
 
     expect(options.allowedRetryAfterStatusCodes).toEqual(retryAfterStatusCodes);
+  });
+
+  it(`Should use fallback option for 'allowedRetryMethods'`, async () => {
+    const options = buildRetryPolicyConfig({});
+
+    expect(options.allowedRetryMethods).toEqual(HTTP_ALLOWED_RETRY_METHODS);
+  });
+
+  it(`Should set retry policy for 'allowedRetryMethods'`, async () => {
+    const retryMethods = ['patch', 'post', 'trace'];
+    const options = buildRetryPolicyConfig({
+      allowedRetryMethods: retryMethods,
+    });
+
+    expect(options.allowedRetryMethods).toEqual(retryMethods);
   });
 });
