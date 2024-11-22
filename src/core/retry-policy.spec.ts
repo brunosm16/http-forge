@@ -7,7 +7,7 @@ import {
 import { buildRetryPolicyConfig } from './retry-policy';
 
 describe('retry-policy', () => {
-  it(`Should use fallback option for 'allowedRetryAfterStatusCodes'`, async () => {
+  it(`Should use fallback option for 'allowedRetryAfterStatusCodes'`, () => {
     const options = buildRetryPolicyConfig({});
 
     expect(options.allowedRetryAfterStatusCodes).toEqual(
@@ -15,7 +15,7 @@ describe('retry-policy', () => {
     );
   });
 
-  it(`Should set retry policy for 'allowedRetryAfterStatusCodes'`, async () => {
+  it(`Should set retry policy for 'allowedRetryAfterStatusCodes'`, () => {
     const retryAfterStatusCodes = [403, 500, 513];
 
     const options = buildRetryPolicyConfig({
@@ -25,13 +25,13 @@ describe('retry-policy', () => {
     expect(options.allowedRetryAfterStatusCodes).toEqual(retryAfterStatusCodes);
   });
 
-  it(`Should use fallback option for 'allowedRetryMethods'`, async () => {
+  it(`Should use fallback option for 'allowedRetryMethods'`, () => {
     const options = buildRetryPolicyConfig({});
 
     expect(options.allowedRetryMethods).toEqual(HTTP_ALLOWED_RETRY_METHODS);
   });
 
-  it(`Should set retry policy for 'allowedRetryMethods'`, async () => {
+  it(`Should set retry policy for 'allowedRetryMethods'`, () => {
     const retryMethods = ['patch', 'post', 'trace'];
     const options = buildRetryPolicyConfig({
       allowedRetryMethods: retryMethods,
@@ -40,7 +40,7 @@ describe('retry-policy', () => {
     expect(options.allowedRetryMethods).toEqual(retryMethods);
   });
 
-  it(`Should use fallback option for 'allowedRetryStatusCodes'`, async () => {
+  it(`Should use fallback option for 'allowedRetryStatusCodes'`, () => {
     const options = buildRetryPolicyConfig({});
 
     expect(options.allowedRetryStatusCodes).toEqual(
@@ -48,7 +48,7 @@ describe('retry-policy', () => {
     );
   });
 
-  it(`Should set retry policy for 'allowedRetryStatusCodes'`, async () => {
+  it(`Should set retry policy for 'allowedRetryStatusCodes'`, () => {
     const statusCodes = [403, 500, 513];
 
     const options = buildRetryPolicyConfig({
