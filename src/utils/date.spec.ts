@@ -17,5 +17,13 @@ describe('.date', () => {
 
       expect(isValidTimeStamp).toBe(false);
     });
+
+    it('should return false to invalid timestamp', () => {
+      const timestamp = '1';
+
+      const isValidTimeStamp = isTimeStamp(timestamp);
+
+      expect(isValidTimeStamp).toBe(false);
+    });
   });
 });

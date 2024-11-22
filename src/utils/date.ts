@@ -1,5 +1,7 @@
 export const isTimeStamp = (value: unknown) => {
-  if (typeof value !== 'string') {
+  const parsedValue = Number(value);
+
+  if (typeof value !== 'string' || !Number.isNaN(parsedValue)) {
     return false;
   }
 
