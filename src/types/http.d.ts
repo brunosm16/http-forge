@@ -83,3 +83,15 @@ export type FileTransferProgress = {
   fileSize: number;
   percentage: number;
 };
+
+export type RetryPolicyConfig = {
+  allowedRetryAfterStatusCodes?: number[];
+
+  allowedRetryMethods?: string[];
+
+  allowedRetryStatusCodes?: number[];
+
+  retryAfterLimit?: number;
+
+  retryLength?: number;
+};
