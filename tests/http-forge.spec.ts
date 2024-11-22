@@ -627,5 +627,17 @@ describe('Http forge tests', () => {
       expect(midPercentage).toEqual(0);
       expect(finalPercentage).toEqual(0);
     });
+
+    it('Should not execute timeout when promise is resolved', async () => {
+      const endpoint = `${serverTest.url}/success`;
+
+      const startTime = new Date().getTime();
+
+      await httpForge.get(endpoint, { timeoutLength: 8000 }).text();
+
+      const elapsedTime = startTime - new Date().getTime();
+
+      expect(elapsedTime).toEqual(0);
+    });
   });
 });
