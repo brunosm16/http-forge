@@ -4,6 +4,7 @@ import {
   HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
   HTTP_ALLOWED_RETRY_METHODS,
   HTTP_ALLOWED_RETRY_STATUS_CODES,
+  HTTP_FORGE_DEFAULT_RETRY_LENGTH,
 } from '@/constants';
 
 const resolveRetryAfterStatusCodes = (statusCodes: number[]): number[] => {
@@ -30,6 +31,18 @@ const resolveRetryStatusCodes = (statusCodes: number[]): number[] => {
   return Array.from(new Set(statusCodes));
 };
 
+const resolveRetryLength = (retryLength: number): number => {
+  if (retryLength < 0) {
+    throw new Error(`'retry-length' should be a positive integer`);
+  }
+
+  if (!retryLength) {
+    return HTTP_FORGE_DEFAULT_RETRY_LENGTH;
+  }
+
+  return retryLength;
+};
+
 export const buildRetryPolicyConfig = (
   inputRetryPolicy: RetryPolicyConfig
 ): RetryPolicyConfig => {
@@ -45,9 +58,13 @@ export const buildRetryPolicyConfig = (
     inputRetryPolicy?.allowedRetryStatusCodes
   );
 
+  const retryLength = resolveRetryLength(inputRetryPolicy?.retryLength);
+
   return {
     allowedRetryAfterStatusCodes,
     allowedRetryMethods,
     allowedRetryStatusCodes,
+    retryAfterLimit: inputRetryPolicy?.retryAfterLimit,
+    retryLength,
   };
 };
