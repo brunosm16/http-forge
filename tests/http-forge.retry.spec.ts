@@ -1,13 +1,38 @@
-import { HTTP_STATUS_CODES } from '@/constants';
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
 describe('Retry logic', () => {
-  const FIXED_JEST_TIMEOUT = 8000;
+  const FIXED_JEST_TIMEOUT = 7000;
 
   jest.setTimeout(FIXED_JEST_TIMEOUT);
 
-  it('Should retry request when it fails', async () => {
+  it('Should retry request with default policy when it fails', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    const retryLimit = 3;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.status(503).end();
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const result = await httpForge.get(endpoint).text();
+
+    expect(result).toEqual('Hey this is a successful GET response');
+
+    await server.close();
+  });
+
+  it(`Should retry request for 'allowedRetryMethods'`, async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
@@ -28,11 +53,109 @@ describe('Retry logic', () => {
 
     const result = await httpForge
       .get(endpoint, {
-        retryLength: 2,
+        retryPolicy: {
+          allowedRetryMethods: ['get'],
+        },
       })
       .text();
 
     expect(result).toEqual('Hey this is a successful GET response');
+
+    await server.close();
+  });
+
+  it(`Should not retry request for method not included in 'allowedRetryMethods'`, async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    const retryLimit = 3;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.status(503).end();
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const promise = httpForge
+      .get(endpoint, {
+        retryPolicy: {
+          allowedRetryMethods: ['post'],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
+
+    await server.close();
+  });
+
+  it(`Should retry request for 'allowedRetryStatusCodes'`, async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    const retryLimit = 3;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.status(505).end();
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const result = await httpForge
+      .get(endpoint, {
+        retryPolicy: {
+          allowedRetryStatusCodes: [505],
+        },
+      })
+      .text();
+
+    expect(result).toEqual('Hey this is a successful GET response');
+
+    await server.close();
+  });
+
+  it(`Should not retry request for statusCode not included in 'allowedRetryStatusCodes'`, async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    const retryLimit = 3;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.status(508).end();
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const promise = httpForge
+      .get(endpoint, {
+        retryPolicy: {
+          allowedRetryStatusCodes: [401],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
 
     await server.close();
   });
@@ -58,7 +181,9 @@ describe('Retry logic', () => {
 
     const promise = httpForge
       .get(endpoint, {
-        retryLength: 2,
+        retryPolicy: {
+          retryLength: 2,
+        },
       })
       .text();
 
@@ -88,7 +213,9 @@ describe('Retry logic', () => {
 
     const promise = httpForge
       .get(endpoint, {
-        retryLength: 0,
+        retryPolicy: {
+          retryLength: 0,
+        },
       })
       .text();
 
@@ -97,11 +224,7 @@ describe('Retry logic', () => {
     await server.close();
   });
 
-  it.each([
-    HTTP_STATUS_CODES.STATUS_CODE_408,
-    HTTP_STATUS_CODES.STATUS_CODE_413,
-    HTTP_STATUS_CODES.STATUS_CODE_429,
-  ])(`Should retry request for valid status code %i`, async (statusCode) => {
+  it(`Should no retry when allowedRetryStatusCodes it's empty`, async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
@@ -114,59 +237,26 @@ describe('Retry logic', () => {
       attempts += 1;
 
       if (attempts < retryLimit) {
-        res.status(statusCode).end();
+        res.status(503).end();
       } else {
         res.end('Hey this is a successful GET response');
       }
     });
 
-    const result = await httpForge
+    const promise = httpForge
       .get(endpoint, {
-        retryLength: 2,
+        retryPolicy: {
+          allowedRetryStatusCodes: [],
+        },
       })
       .text();
 
-    expect(result).toEqual('Hey this is a successful GET response');
+    expect(promise).rejects.toThrow();
 
     await server.close();
   });
 
-  it.each(['get', 'put'])(
-    `Should retry request for valid method %s`,
-    async (method) => {
-      const server = await createTestServer();
-
-      const endpoint = `${server.url}/retry-test`;
-
-      const retryLimit = 2;
-
-      let attempts = 0;
-
-      const normalizedMethod = method.toLowerCase();
-
-      server[normalizedMethod]('/retry-test', async (req, res) => {
-        attempts += 1;
-
-        if (attempts < retryLimit) {
-          res.status(503).end();
-        } else {
-          res.end(`Hey this is a successful ${normalizedMethod} response`);
-        }
-      });
-
-      const result = await httpForge[method](endpoint, {
-        retryLength: 2,
-      }).text();
-
-      expect(result).toEqual(
-        `Hey this is a successful ${normalizedMethod} response`
-      );
-
-      await server.close();
-    }
-  );
-
-  it('Should not retry forbidden method', async () => {
+  it(`Should no retry when allowedRetryMethods it's empty`, async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
@@ -175,7 +265,7 @@ describe('Retry logic', () => {
 
     let attempts = 0;
 
-    server.post('/retry-test', async (req, res) => {
+    server.get('/retry-test', async (req, res) => {
       attempts += 1;
 
       if (attempts < retryLimit) {
@@ -185,13 +275,15 @@ describe('Retry logic', () => {
       }
     });
 
-    const result = httpForge
-      .post(endpoint, {
-        retryLength: 2,
+    const promise = httpForge
+      .get(endpoint, {
+        retryPolicy: {
+          allowedRetryMethods: [],
+        },
       })
       .text();
 
-    expect(result).rejects.toThrow();
+    expect(promise).rejects.toThrow();
 
     await server.close();
   });
