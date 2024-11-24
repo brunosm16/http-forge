@@ -63,6 +63,7 @@ export type HttpForgeHooks = {
   fileTransferHook?: FileTransferHookFunction;
   preRequestHooks?: HttpPreRequestHookFunction[];
   preResponseHooks?: HttpPreResponseHookFunction[];
+  preRetryHooks?: HttpPreRetryHookFunction[];
 };
 
 export type HttpPreRequestHookFunction = (
@@ -72,6 +73,13 @@ export type HttpPreRequestHookFunction = (
 export type HttpPreResponseHookFunction = (
   response: Response
 ) => Promise<Response>;
+
+export type HttpPreRetryHookFunction = (
+  input: HttpForgeInput,
+  retryAttempts: number,
+  error: Error,
+  options: HttpForgeOptions
+) => Promise<void>;
 
 export type FileTransferHookFunction = (
   fileTransferProgress: FileTransferProgress,

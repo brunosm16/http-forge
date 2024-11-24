@@ -177,6 +177,21 @@ export class HttpForge {
     return responseResult;
   }
 
+  private async executePreRetryHooks(
+    input: HttpForgeInput,
+    retryAttempts: number,
+    error: Error,
+    options: HttpForgeOptions
+  ): Promise<void> {
+    const { preRetryHooks } = options.hooks;
+
+    if (preRetryHooks?.length) {
+      for await (const hook of preRetryHooks) {
+        await hook(input, retryAttempts, error, options);
+      }
+    }
+  }
+
   private async exponentialBackoff() {
     const backoff =
       HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY *
@@ -216,9 +231,16 @@ export class HttpForge {
       return responseHook.clone()[type]();
     } catch (error) {
       if (this.shouldRetryAfter(error)) {
+        this.retryAttempts += 1;
         await this.applyRetryAfterDelay(
           error,
           this.httpForgeOptions?.retryPolicy
+        );
+        await this.executePreRetryHooks(
+          this.httpForgeInput,
+          this.retryAttempts,
+          error,
+          this.httpForgeOptions
         );
         return this.fetch(type);
       }
@@ -226,6 +248,12 @@ export class HttpForge {
       if (this.shouldRetry(error)) {
         this.retryAttempts += 1;
         await this.exponentialBackoff();
+        await this.executePreRetryHooks(
+          this.httpForgeInput,
+          this.retryAttempts,
+          error,
+          this.httpForgeOptions
+        );
         return this.fetch(type);
       }
 
@@ -362,6 +390,7 @@ export class HttpForge {
     const defaultHooks: HttpForgeHooks = {
       preRequestHooks: [],
       preResponseHooks: [],
+      preRetryHooks: [],
     };
 
     return defaultHooks;

@@ -1,6 +1,8 @@
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
+import type { HttpForgeInput, HttpForgeOptions } from './types/http';
+
 describe('Retry logic', () => {
   const FIXED_JEST_TIMEOUT = 7000;
 
@@ -279,6 +281,167 @@ describe('Retry logic', () => {
       .get(endpoint, {
         retryPolicy: {
           allowedRetryMethods: [],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
+
+    await server.close();
+  });
+
+  it('Should correctly use pre-retry-hook', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      if (attempts > 1) {
+        res.end(req.headers.customheader);
+      } else {
+        attempts += 1;
+        res.status(503).end();
+      }
+    });
+
+    const preRetryHook = async (
+      input: HttpForgeInput,
+      retryAttempts: number,
+      error: Error,
+      options: HttpForgeOptions
+    ) => {
+      console.log('Pre Retry Hook Was Called');
+      // eslint-disable-next-line no-param-reassign
+      options.headers = new Headers({
+        customHeader: 'This is a custom header',
+      });
+    };
+
+    const result = await httpForge
+      .get(endpoint, {
+        hooks: {
+          preRetryHooks: [preRetryHook],
+        },
+      })
+      .text();
+
+    expect(result).toEqual('This is a custom header');
+
+    await server.close();
+  });
+
+  it('Should call pre-retry-hook with correct args', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      if (attempts > 1) {
+        res.end('Successful get');
+      } else {
+        attempts += 1;
+        res.status(503).end();
+      }
+    });
+
+    const preRetryHook = async (
+      input: HttpForgeInput,
+      retryAttempts: number,
+      error: Error,
+      options: HttpForgeOptions
+    ) => {
+      expect(input).toEqual(endpoint);
+      expect(retryAttempts).toEqual(attempts);
+      expect(error?.message).toEqual('Service Unavailable');
+      expect(options).toBeTruthy();
+    };
+
+    await httpForge
+      .get(endpoint, {
+        hooks: {
+          preRetryHooks: [preRetryHook],
+        },
+      })
+      .text();
+
+    await server.close();
+  });
+
+  it('Should catch pre-retry-hook errors', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      if (attempts > 1) {
+        res.end('Successful get');
+      } else {
+        attempts += 1;
+        res.status(503).end();
+      }
+    });
+
+    const mockError = new Error('Mock Error');
+
+    const preRetryHook = async (
+      input: HttpForgeInput,
+      retryAttempts: number,
+      error: Error,
+      options: HttpForgeOptions
+    ) => {
+      throw mockError;
+    };
+
+    const promise = httpForge
+      .get(endpoint, {
+        hooks: {
+          preRetryHooks: [preRetryHook],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
+
+    await server.close();
+  });
+
+  it('Should catch pre-retry-hook reject', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      if (attempts > 1) {
+        res.end('Successful get');
+      } else {
+        attempts += 1;
+        res.status(503).end();
+      }
+    });
+
+    const mockError = new Error('Mock Error');
+
+    const preRetryHook = async (
+      input: HttpForgeInput,
+      retryAttempts: number,
+      error: Error,
+      options: HttpForgeOptions
+    ) => {
+      Promise.reject(mockError);
+    };
+
+    const promise = httpForge
+      .get(endpoint, {
+        hooks: {
+          preRetryHooks: [preRetryHook],
         },
       })
       .text();
