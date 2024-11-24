@@ -41,6 +41,14 @@ export const configTestServer = async () => {
     res.json(JSON.parse(req.body));
   });
 
+  server.get('/empty-response', (req, res) => {
+    res.status(200).end('');
+  });
+
+  server.get('/no-content', (req, res) => {
+    res.status(204).end('');
+  });
+
   server.get('/headers-test', (req, res) => {
     const { headers } = req;
 

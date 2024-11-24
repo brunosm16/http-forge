@@ -312,7 +312,6 @@ describe('Retry logic', () => {
       error: Error,
       options: HttpForgeOptions
     ) => {
-      console.log('Pre Retry Hook Was Called');
       // eslint-disable-next-line no-param-reassign
       options.headers = new Headers({
         customHeader: 'This is a custom header',

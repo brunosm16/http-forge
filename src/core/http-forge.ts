@@ -212,7 +212,7 @@ export class HttpForge {
     return httpForgeInput;
   }
 
-  private async fetch(type: keyof HttpSupportedResponses): Promise<Response> {
+  private async fetch(type: HttpSupportedResponses): Promise<Response> {
     try {
       await this.executePreRequestHooks();
 
@@ -228,7 +228,7 @@ export class HttpForge {
         throw new HttpError(responseHook);
       }
 
-      return responseHook.clone()[type]();
+      return await this.normalizeResponse(responseHook, type);
     } catch (error) {
       if (this.shouldRetryAfter(error)) {
         this.retryAttempts += 1;
@@ -373,6 +373,13 @@ export class HttpForge {
     return allowedRetryStatusCodes.includes(status);
   }
 
+  private normalizeResponse(response: Response, type: HttpSupportedResponses) {
+    if (response.status === 204 && type === 'json') {
+      return '';
+    }
+    return response.clone()[type]();
+  }
+
   private parseRetryAfter(error: unknown) {
     const anyError = error as HttpError;
     const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
@@ -422,7 +429,7 @@ export class HttpForge {
       (acc: HttpForgeResponseOptions, type: HttpSupportedResponses) => {
         const updatedAcc = {
           ...acc,
-          [type]: () => this.fetch(type as keyof HttpSupportedResponses),
+          [type]: () => this.fetch(type),
         };
 
         return updatedAcc;

@@ -95,6 +95,25 @@ describe('Http forge tests', () => {
       expect(result).toEqual(jsonBody);
     });
 
+    it('Should return error message for empty json with status-code 200', async () => {
+      const endpoint = `${serverTest.url}/empty-response`;
+      let errMessage = '';
+
+      try {
+        await httpForge.get(endpoint).json();
+      } catch (err) {
+        errMessage = err?.message;
+      }
+
+      expect(errMessage).toEqual('Unexpected end of JSON input');
+    });
+
+    it('Should return empty string for empty json with status-code 204', async () => {
+      const endpoint = `${serverTest.url}/no-content`;
+      const result = await httpForge.get(endpoint).json();
+      expect(result).toEqual('');
+    });
+
     it('Should allow custom headers', async () => {
       const endpoint = `${serverTest.url}/headers-test`;
 
