@@ -221,6 +221,14 @@ export class HttpForge {
       }
     }
 
+    const { jsonParser } = this.httpForgeOptions;
+
+    if (this.httpForgeOptions.jsonParser) {
+      responseResult.json = async () => {
+        return this.useJsonParser(responseResult, jsonParser);
+      };
+    }
+
     if (fileTransferHook) {
       return this.streamFileTransfer(responseResult, fileTransferHook);
     }
@@ -268,7 +276,9 @@ export class HttpForge {
     return httpForgeInput;
   }
 
-  private async fetch(type: HttpSupportedResponses): Promise<Error | Response> {
+  private async fetch(
+    type: HttpSupportedResponses
+  ): Promise<Error | Response | unknown> {
     try {
       await this.executePreRequestHooks();
 
@@ -412,10 +422,20 @@ export class HttpForge {
     return allowedRetryStatusCodes.includes(status);
   }
 
-  private normalizeResponse(response: Response, type: HttpSupportedResponses) {
+  private async normalizeResponse(
+    response: Response,
+    type: HttpSupportedResponses
+  ) {
+    const { jsonParser } = this.httpForgeOptions;
+
     if (response.status === 204 && type === 'json') {
       return '';
     }
+
+    if (type === 'json' && jsonParser) {
+      return this.useJsonParser(response, jsonParser);
+    }
+
     return response.clone()[type]();
   }
 
@@ -517,5 +537,13 @@ export class HttpForge {
     );
 
     return new Response(readTransferStream);
+  }
+
+  private async useJsonParser(
+    response: Response,
+    jsonParser: (data: string) => unknown
+  ) {
+    const textResponse = await response.text();
+    return jsonParser(textResponse);
   }
 }

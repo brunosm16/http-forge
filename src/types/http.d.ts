@@ -16,6 +16,7 @@ export type HttpForgeOptions = {
   abortController?: AbortController;
   hooks?: HttpForgeHooks;
   jsonBody?: unknown;
+  jsonParser?: (data: string) => unknown;
   prefixURL?: HttpForgeInput | null;
   requestHeaders?: Headers;
   retryPolicy?: RetryPolicyConfig;

@@ -658,5 +658,73 @@ describe('Http forge tests', () => {
 
       expect(elapsedTime).toEqual(0);
     });
+
+    it('Should use custom `json-parser`', async () => {
+      const endpoint = `${serverTest.url}/json-test`;
+
+      const jsonBody = {
+        key: 'value',
+        key2: 'value2',
+      };
+
+      const result = await httpForge
+        .post(endpoint, {
+          jsonBody,
+          jsonParser: (data: string) => {
+            return {
+              ...JSON.parse(data),
+              customKey: 'Custom Parse Key',
+            };
+          },
+        })
+        .json();
+
+      expect(result).toEqual({
+        ...jsonBody,
+        customKey: 'Custom Parse Key',
+      });
+    });
+
+    it('Should use custom `json-parser` in pre-response-hooks', async () => {
+      const endpoint = `${serverTest.url}/success`;
+
+      const customResponseHook = async (response: Response) => {
+        const jsonString =
+          '{"username":"jonhdoe", "email":"jonhdoe@email.com","age":25}';
+        const updatedResponse = new Response(jsonString, {
+          headers: {
+            'Content-Length': '48',
+            'Content-Type': 'text/plain',
+          },
+          status: 200,
+          statusText: 'OK',
+        });
+
+        return updatedResponse;
+      };
+
+      const preResponseHooks = [customResponseHook];
+
+      const result = await httpForge
+        .get(endpoint, {
+          hooks: {
+            preResponseHooks,
+          },
+          jsonParser: (data: string) => {
+            return {
+              ...JSON.parse(data),
+              customKey: 'Custom Parse Key',
+            };
+          },
+        })
+        .json();
+
+      expect(result).toEqual({
+        age: 25,
+        customKey: 'Custom Parse Key',
+        email: 'jonhdoe@email.com',
+        username: 'jonhdoe',
+      });
+    });
   });
 });
