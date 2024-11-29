@@ -1,3 +1,5 @@
+import type { CustomRequestSignals } from '@/enums';
+
 export type HttpError = {
   errorMessage?: string;
   statusCode?: string;
@@ -57,6 +59,7 @@ export type HttpForgeMethods = {
   ) => HttpForgeResponseOptions;
 } & {
   extend: (defaultOptions?: HttpForgeOptions) => HttpForgeMethods;
+  haltRequest: () => CustomRequestSignals.HALT_REQUEST_SIGNAL;
 };
 
 export type HttpForgeHooks = {
@@ -79,7 +82,7 @@ export type HttpPreRetryHookFunction = (
   retryAttempts: number,
   error: Error,
   options: HttpForgeOptions
-) => Promise<void>;
+) => Promise<CustomRequestSignals.HALT_REQUEST_SIGNAL> | Promise<void>;
 
 export type FileTransferHookFunction = (
   fileTransferProgress: FileTransferProgress,

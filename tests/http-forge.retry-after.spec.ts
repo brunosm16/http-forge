@@ -1,6 +1,8 @@
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
+import type { HttpForgeInput, HttpForgeOptions } from './types/http';
+
 describe('Retry after logic', () => {
   const FIXED_JEST_TIMEOUT = 8000;
 
@@ -271,6 +273,50 @@ describe('Retry after logic', () => {
       .text();
 
     expect(promise).rejects.toThrow();
+    await server.close();
+  });
+
+  it(`Should halt request in pre-retry-hook`, async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+    const retryLimit = 5;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.writeHead(520, {
+          'Retry-After': 0.25,
+        });
+
+        res.end('Unknown Error');
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const preRetryHook = async (
+      input: HttpForgeInput,
+      retryAttempts: number,
+      error: Error,
+      options: HttpForgeOptions
+    ) => {
+      return httpForge.haltRequest();
+    };
+
+    const promise = httpForge
+      .get(endpoint, {
+        hooks: {
+          preRetryHooks: [preRetryHook],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
+
     await server.close();
   });
 });

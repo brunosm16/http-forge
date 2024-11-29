@@ -18,6 +18,7 @@ import {
   HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
   HTTP_SUPPORTED_RESPONSES,
 } from '@/constants';
+import { CustomRequestSignals } from '@/enums';
 import { HttpError, TimeoutError } from '@/errors';
 import { delay, isTimeStamp, timeout } from '@/utils';
 
@@ -25,6 +26,8 @@ import { buildRetryPolicyConfig } from './retry-policy';
 import { makeReadTransferStream } from './streams';
 
 export class HttpForge {
+  private haltRequest: boolean = false;
+
   private httpForgeInput: HttpForgeInput;
 
   private httpForgeOptions: HttpForgeOptions;
@@ -122,6 +125,54 @@ export class HttpForge {
     await delay(retryAfter);
   }
 
+  private async doRetry(
+    error: Error,
+    type: HttpSupportedResponses,
+    shouldHandleHttpErrors: boolean
+  ) {
+    this.retryAttempts += 1;
+    await this.exponentialBackoff();
+    await this.executePreRetryHooks(
+      this.httpForgeInput,
+      this.retryAttempts,
+      error,
+      this.httpForgeOptions
+    );
+
+    if (this.haltRequest) {
+      if (shouldHandleHttpErrors) {
+        throw error;
+      }
+      return error;
+    }
+
+    return this.fetch(type);
+  }
+
+  private async doRetryAfter(
+    error: Error,
+    type: HttpSupportedResponses,
+    shouldHandleHttpErrors: boolean
+  ) {
+    this.retryAttempts += 1;
+    await this.applyRetryAfterDelay(error, this.httpForgeOptions?.retryPolicy);
+    await this.executePreRetryHooks(
+      this.httpForgeInput,
+      this.retryAttempts,
+      error,
+      this.httpForgeOptions
+    );
+
+    if (this.haltRequest) {
+      if (shouldHandleHttpErrors) {
+        throw error;
+      }
+      return error;
+    }
+
+    return this.fetch(type);
+  }
+
   private errorHasRetryAfter(error: unknown) {
     const anyError = error as HttpError;
     const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
@@ -187,7 +238,12 @@ export class HttpForge {
 
     if (preRetryHooks?.length) {
       for await (const hook of preRetryHooks) {
-        await hook(input, retryAttempts, error, options);
+        const resultHook = await hook(input, retryAttempts, error, options);
+
+        if (resultHook === CustomRequestSignals.HALT_REQUEST_SIGNAL) {
+          this.haltRequest = true;
+          return;
+        }
       }
     }
   }
@@ -212,7 +268,7 @@ export class HttpForge {
     return httpForgeInput;
   }
 
-  private async fetch(type: HttpSupportedResponses): Promise<Response> {
+  private async fetch(type: HttpSupportedResponses): Promise<Error | Response> {
     try {
       await this.executePreRequestHooks();
 
@@ -230,34 +286,17 @@ export class HttpForge {
 
       return await this.normalizeResponse(responseHook, type);
     } catch (error) {
+      const { shouldHandleHttpErrors } = this.httpForgeOptions;
+
       if (this.shouldRetryAfter(error)) {
-        this.retryAttempts += 1;
-        await this.applyRetryAfterDelay(
-          error,
-          this.httpForgeOptions?.retryPolicy
-        );
-        await this.executePreRetryHooks(
-          this.httpForgeInput,
-          this.retryAttempts,
-          error,
-          this.httpForgeOptions
-        );
-        return this.fetch(type);
+        return this.doRetryAfter(error, type, shouldHandleHttpErrors);
       }
 
       if (this.shouldRetry(error)) {
-        this.retryAttempts += 1;
-        await this.exponentialBackoff();
-        await this.executePreRetryHooks(
-          this.httpForgeInput,
-          this.retryAttempts,
-          error,
-          this.httpForgeOptions
-        );
-        return this.fetch(type);
+        return this.doRetry(error, type, shouldHandleHttpErrors);
       }
 
-      if (this.httpForgeOptions.shouldHandleHttpErrors) {
+      if (shouldHandleHttpErrors) {
         throw error;
       }
 

@@ -449,4 +449,42 @@ describe('Retry logic', () => {
 
     await server.close();
   });
+
+  it('Should halt request in pre-retry-hook', async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+
+    server.get('/retry-test', async (req, res) => {
+      if (attempts > 2) {
+        res.end('Testing');
+      } else {
+        attempts += 1;
+        res.status(503).end();
+      }
+    });
+
+    const preRetryHook = async (
+      input: HttpForgeInput,
+      retryAttempts: number,
+      error: Error,
+      options: HttpForgeOptions
+    ) => {
+      return httpForge.haltRequest();
+    };
+
+    const promise = httpForge
+      .get(endpoint, {
+        hooks: {
+          preRetryHooks: [preRetryHook],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
+
+    await server.close();
+  });
 });

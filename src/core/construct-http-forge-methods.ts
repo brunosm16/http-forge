@@ -5,6 +5,7 @@ import type {
 } from '@/types/http';
 
 import { HTTP_SUPPORTED_METHODS } from '@/constants';
+import { CustomRequestSignals } from '@/enums';
 import { deepMerge } from '@/utils';
 
 import { HttpForge } from './http-forge';
@@ -56,6 +57,9 @@ export const constructHttpForgeMethods = (
 
     return constructHttpForgeMethods(options);
   };
+
+  httpForgeByMethods.haltRequest = () =>
+    CustomRequestSignals.HALT_REQUEST_SIGNAL;
 
   return httpForgeByMethods;
 };
