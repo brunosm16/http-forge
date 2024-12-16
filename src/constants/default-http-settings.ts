@@ -1,0 +1,6 @@
+export const DEFAULT_HTTP_CREDENTIALS = 'same-origin';
+export const DEFAULT_HTTP_RETRY_ATTEMPTS = 5;
+export const DEFAULT_HTTP_DELAY_FACTOR = 2;
+export const DEFAULT_DELAY_AFTER_MS = 1000;
+export const DEFAULT_HTTP_BACKOFF_DELAY_MS = 1000;
+export const DEFAULT_HTTP_TIMEOUT_MS = 8000;

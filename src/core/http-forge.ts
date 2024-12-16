@@ -11,11 +11,11 @@ import type {
 } from '@/types/http';
 
 import {
-  HTTP_FORGE_DEFAULT_CREDENTIALS,
-  HTTP_FORGE_DEFAULT_RETRY_AFTER_DELAY,
-  HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY,
-  HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR,
-  HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH,
+  DEFAULT_DELAY_AFTER_MS,
+  DEFAULT_HTTP_BACKOFF_DELAY_MS,
+  DEFAULT_HTTP_CREDENTIALS,
+  DEFAULT_HTTP_DELAY_FACTOR,
+  DEFAULT_HTTP_TIMEOUT_MS,
   HTTP_SUPPORTED_RESPONSES,
 } from '@/constants';
 import { CustomRequestSignals } from '@/enums';
@@ -258,8 +258,8 @@ export class HttpForge {
 
   private async exponentialBackoff() {
     const backoff =
-      HTTP_FORGE_DEFAULT_RETRY_BACKOFF_DELAY *
-      HTTP_FORGE_DEFAULT_RETRY_BACKOFF_FACTOR ** this.retryAttempts;
+      DEFAULT_HTTP_BACKOFF_DELAY_MS *
+      DEFAULT_HTTP_DELAY_FACTOR ** this.retryAttempts;
 
     await delay(backoff);
   }
@@ -321,7 +321,7 @@ export class HttpForge {
       throw new Error(`'Retry-After' header must be a number or a timestamp`);
     }
 
-    const retryAfterDelay = retryAfter * HTTP_FORGE_DEFAULT_RETRY_AFTER_DELAY;
+    const retryAfterDelay = retryAfter * DEFAULT_DELAY_AFTER_MS;
 
     return retryAfterDelay;
   }
@@ -361,7 +361,7 @@ export class HttpForge {
 
     const resolvedRetry = buildRetryPolicyConfig(retryPolicy);
 
-    const resolvedTimeout = timeoutLength ?? HTTP_FORGE_DEFAULT_TIMEOUT_LENGTH;
+    const resolvedTimeout = timeoutLength ?? DEFAULT_HTTP_TIMEOUT_MS;
 
     const resolvedHeaders = new Headers(headers ?? {});
 
@@ -371,7 +371,7 @@ export class HttpForge {
 
     this.httpForgeOptions = {
       ...options,
-      credentials: HTTP_FORGE_DEFAULT_CREDENTIALS,
+      credentials: DEFAULT_HTTP_CREDENTIALS,
       hooks: resolvedHooks,
       prefixURL: resolvedPrefixURL,
       requestHeaders: resolvedHeaders,

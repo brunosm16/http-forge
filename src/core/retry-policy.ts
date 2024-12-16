@@ -1,10 +1,10 @@
 import type { RetryPolicyConfig } from '@/types/http';
 
 import {
+  DEFAULT_HTTP_RETRY_ATTEMPTS,
   HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
   HTTP_ALLOWED_RETRY_METHODS,
   HTTP_ALLOWED_RETRY_STATUS_CODES,
-  HTTP_FORGE_DEFAULT_RETRY_LENGTH,
 } from '@/constants';
 
 const resolveRetryAfterStatusCodes = (statusCodes: number[]): number[] => {
@@ -37,7 +37,7 @@ const resolveRetryLength = (retryLength: number): number => {
   }
 
   if (!retryLength) {
-    return HTTP_FORGE_DEFAULT_RETRY_LENGTH;
+    return DEFAULT_HTTP_RETRY_ATTEMPTS;
   }
 
   return retryLength;

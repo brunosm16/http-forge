@@ -1,8 +1,8 @@
 import {
+  DEFAULT_HTTP_RETRY_ATTEMPTS,
   HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
   HTTP_ALLOWED_RETRY_METHODS,
   HTTP_ALLOWED_RETRY_STATUS_CODES,
-  HTTP_FORGE_DEFAULT_RETRY_LENGTH,
 } from '@/constants';
 
 import { buildRetryPolicyConfig } from './retry-policy';
@@ -70,7 +70,7 @@ describe('retry-policy', () => {
   it(`Should use fallback option for 'retry-length'`, () => {
     const options = buildRetryPolicyConfig({});
 
-    expect(options.retryLength).toEqual(HTTP_FORGE_DEFAULT_RETRY_LENGTH);
+    expect(options.retryLength).toEqual(DEFAULT_HTTP_RETRY_ATTEMPTS);
   });
 
   it(`Should set retry policy for 'retry-length'`, () => {
