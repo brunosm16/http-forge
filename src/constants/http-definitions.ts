@@ -5,7 +5,7 @@ import type {
 
 import { HTTP_STATUS_CODES } from './http-status-codes';
 
-export const HTTP_SUPPORTED_METHODS = [
+export const SUPPORTED_HTTP_VERBS = [
   'get',
   'post',
   'put',
@@ -14,7 +14,7 @@ export const HTTP_SUPPORTED_METHODS = [
   'delete',
 ] as HttpSupportedMethods[];
 
-export const HTTP_SUPPORTED_RESPONSES = [
+export const SUPPORTED_HTTP_RESPONSES = [
   'json',
   'text',
   'formData',
@@ -22,14 +22,14 @@ export const HTTP_SUPPORTED_RESPONSES = [
   'arrayBuffer',
 ] as HttpSupportedResponses[];
 
-export const HTTP_ALLOWED_RETRY_METHODS = [
+export const SUPPORTED_RETRY_VERBS = [
   'get',
   'put',
   'head',
   'delete',
 ] as string[];
 
-export const HTTP_ALLOWED_RETRY_STATUS_CODES = [
+export const SUPPORTED_RETRY_CODES = [
   HTTP_STATUS_CODES.STATUS_CODE_408,
   HTTP_STATUS_CODES.STATUS_CODE_413,
   HTTP_STATUS_CODES.STATUS_CODE_429,
@@ -39,7 +39,7 @@ export const HTTP_ALLOWED_RETRY_STATUS_CODES = [
   HTTP_STATUS_CODES.STATUS_CODE_504,
 ] as number[];
 
-export const HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES = [
+export const SUPPORTED_RETRY_AFTER_VERBS = [
   HTTP_STATUS_CODES.STATUS_CODE_413,
   HTTP_STATUS_CODES.STATUS_CODE_429,
   HTTP_STATUS_CODES.STATUS_CODE_503,

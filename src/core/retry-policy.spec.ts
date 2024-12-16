@@ -1,8 +1,8 @@
 import {
   DEFAULT_HTTP_RETRY_ATTEMPTS,
-  HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
-  HTTP_ALLOWED_RETRY_METHODS,
-  HTTP_ALLOWED_RETRY_STATUS_CODES,
+  SUPPORTED_RETRY_AFTER_VERBS,
+  SUPPORTED_RETRY_CODES,
+  SUPPORTED_RETRY_VERBS,
 } from '@/constants';
 
 import { buildRetryPolicyConfig } from './retry-policy';
@@ -12,7 +12,7 @@ describe('retry-policy', () => {
     const options = buildRetryPolicyConfig({});
 
     expect(options.allowedRetryAfterStatusCodes).toEqual(
-      HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES
+      SUPPORTED_RETRY_AFTER_VERBS
     );
   });
 
@@ -29,7 +29,7 @@ describe('retry-policy', () => {
   it(`Should use fallback option for 'allowedRetryMethods'`, () => {
     const options = buildRetryPolicyConfig({});
 
-    expect(options.allowedRetryMethods).toEqual(HTTP_ALLOWED_RETRY_METHODS);
+    expect(options.allowedRetryMethods).toEqual(SUPPORTED_RETRY_VERBS);
   });
 
   it(`Should set retry policy for 'allowedRetryMethods'`, () => {
@@ -44,9 +44,7 @@ describe('retry-policy', () => {
   it(`Should use fallback option for 'allowedRetryStatusCodes'`, () => {
     const options = buildRetryPolicyConfig({});
 
-    expect(options.allowedRetryStatusCodes).toEqual(
-      HTTP_ALLOWED_RETRY_STATUS_CODES
-    );
+    expect(options.allowedRetryStatusCodes).toEqual(SUPPORTED_RETRY_CODES);
   });
 
   it(`Should set retry policy for 'allowedRetryStatusCodes'`, () => {

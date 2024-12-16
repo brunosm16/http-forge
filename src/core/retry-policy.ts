@@ -2,14 +2,14 @@ import type { RetryPolicyConfig } from '@/types/http';
 
 import {
   DEFAULT_HTTP_RETRY_ATTEMPTS,
-  HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES,
-  HTTP_ALLOWED_RETRY_METHODS,
-  HTTP_ALLOWED_RETRY_STATUS_CODES,
+  SUPPORTED_RETRY_AFTER_VERBS,
+  SUPPORTED_RETRY_CODES,
+  SUPPORTED_RETRY_VERBS,
 } from '@/constants';
 
 const resolveRetryAfterStatusCodes = (statusCodes: number[]): number[] => {
   if (!statusCodes) {
-    return HTTP_ALLOWED_RETRY_AFTER_STATUS_CODES;
+    return SUPPORTED_RETRY_AFTER_VERBS;
   }
 
   return Array.from(new Set(statusCodes));
@@ -17,7 +17,7 @@ const resolveRetryAfterStatusCodes = (statusCodes: number[]): number[] => {
 
 const resolveAllowedRetryMethods = (methods: string[]): string[] => {
   if (!methods) {
-    return HTTP_ALLOWED_RETRY_METHODS;
+    return SUPPORTED_RETRY_VERBS;
   }
 
   return Array.from(new Set(methods));
@@ -25,7 +25,7 @@ const resolveAllowedRetryMethods = (methods: string[]): string[] => {
 
 const resolveRetryStatusCodes = (statusCodes: number[]): number[] => {
   if (!statusCodes) {
-    return HTTP_ALLOWED_RETRY_STATUS_CODES;
+    return SUPPORTED_RETRY_CODES;
   }
 
   return Array.from(new Set(statusCodes));

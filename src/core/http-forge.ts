@@ -16,7 +16,7 @@ import {
   DEFAULT_HTTP_CREDENTIALS,
   DEFAULT_HTTP_DELAY_FACTOR,
   DEFAULT_HTTP_TIMEOUT_MS,
-  HTTP_SUPPORTED_RESPONSES,
+  SUPPORTED_HTTP_RESPONSES,
 } from '@/constants';
 import { CustomRequestSignals } from '@/enums';
 import { HttpError, TimeoutError } from '@/errors';
@@ -484,7 +484,7 @@ export class HttpForge {
   }
 
   private responseOptions() {
-    const responses = HTTP_SUPPORTED_RESPONSES.reduce(
+    const responses = SUPPORTED_HTTP_RESPONSES.reduce(
       (acc: HttpForgeResponseOptions, type: HttpSupportedResponses) => {
         const updatedAcc = {
           ...acc,

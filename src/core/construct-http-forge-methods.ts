@@ -4,7 +4,7 @@ import type {
   HttpForgeOptions,
 } from '@/types/http';
 
-import { HTTP_SUPPORTED_METHODS } from '@/constants';
+import { SUPPORTED_HTTP_VERBS } from '@/constants';
 import { CustomRequestSignals } from '@/enums';
 import { deepMerge } from '@/utils';
 
@@ -31,7 +31,7 @@ const buildHttpForge = (
 export const constructHttpForgeMethods = (
   defaultOptions?: HttpForgeOptions
 ) => {
-  const httpForgeByMethods = HTTP_SUPPORTED_METHODS.reduce((acc, method) => {
+  const httpForgeByMethods = SUPPORTED_HTTP_VERBS.reduce((acc, method) => {
     const methodOption = method as keyof HttpForgeMethods;
 
     return {
