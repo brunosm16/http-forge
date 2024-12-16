@@ -3,7 +3,7 @@ import type {
   HttpSupportedResponses,
 } from '@/types/http';
 
-import { HTTP_STATUS_CODES } from './http-status-codes.constants';
+import { HTTP_STATUS_CODES } from './http-status-codes';
 
 export const HTTP_SUPPORTED_METHODS = [
   'get',
