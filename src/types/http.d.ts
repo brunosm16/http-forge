@@ -5,37 +5,37 @@ export type HttpError = {
   statusCode?: string;
 };
 
-export type HttpForgeSearchParams =
+export type HttpSearchParams =
   | Record<string, string>
   | URLSearchParams
   | string
   | string[][];
 
-export type HttpForgeOptions = {
+export type HttpRequestConfig = {
   [key: string]: unknown;
   abortController?: AbortController;
   hooks?: HttpForgeHooks;
   jsonBody?: unknown;
   jsonParser?: (data: string) => unknown;
-  prefixURL?: HttpForgeInput | null;
+  prefixURL?: RequestSource | null;
   requestHeaders?: Headers;
   retryPolicy?: RetryPolicyConfig;
-  searchParams?: HttpForgeSearchParams;
+  searchParams?: HttpSearchParams;
   shouldHandleHttpErrors?: boolean;
   signal?: AbortSignal;
   timeoutLength?: number;
 } & RequestInit;
 
-export type HttpForgeInput = URL | globalThis.Request | string;
+export type RequestSource = URL | globalThis.Request | string;
 
-export type HttpSupportedResponses =
+export type SupportedHTTPResponses =
   | 'arrayBuffer'
   | 'blob'
   | 'formData'
   | 'json'
   | 'text';
 
-export type HttpSupportedMethods =
+export type SupportedHTTPVerbs =
   | 'delete'
   | 'get'
   | 'head'
@@ -43,25 +43,29 @@ export type HttpSupportedMethods =
   | 'post'
   | 'put';
 
-export type HttpForgeResponses = Record<
-  HttpSupportedResponses,
+export type HttpResponseRecord = Record<
+  SupportedHTTPResponses,
   Promise<Response>
 >;
 
-export type HttpForgeResponseOptions = Record<
-  HttpSupportedResponses,
+export type ResponseHandlerMap = Record<
+  SupportedHTTPResponses,
   () => Promise<Response>
 >;
 
-export type HttpForgeMethods = {
-  [key in HttpSupportedMethods]: (
-    httpForgeInput: HttpForgeInput,
-    defaultOptions?: HttpForgeOptions
-  ) => HttpForgeResponseOptions;
-} & {
-  extend: (defaultOptions?: HttpForgeOptions) => HttpForgeMethods;
+export type KeyedResponseHandlerMap = {
+  [key in SupportedHTTPVerbs]: (
+    httpForgeInput: RequestSource,
+    defaultOptions?: HttpRequestConfig
+  ) => ResponseHandlerMap;
+};
+
+export type HandlerExtensions = {
+  extend: (defaultOptions?: HttpRequestConfig) => HttpMethodHandlers;
   haltRequest: () => CustomRequestSignals.HALT_REQUEST_SIGNAL;
 };
+
+export type HttpMethodHandlers = HandlerExtensions & KeyedResponseHandlerMap;
 
 export type HttpForgeHooks = {
   fileTransferHook?: FileTransferHookFunction;
@@ -79,10 +83,10 @@ export type HttpPreResponseHookFunction = (
 ) => Promise<Response>;
 
 export type HttpPreRetryHookFunction = (
-  input: HttpForgeInput,
+  input: RequestSource,
   retryAttempts: number,
   error: Error,
-  options: HttpForgeOptions
+  options: HttpRequestConfig
 ) => Promise<CustomRequestSignals.HALT_REQUEST_SIGNAL> | Promise<void>;
 
 export type FileTransferHookFunction = (

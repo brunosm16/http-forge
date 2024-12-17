@@ -1,7 +1,7 @@
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
-import type { HttpForgeInput, HttpForgeOptions } from './types/http';
+import type { HttpRequestConfig, RequestSource } from './types/http';
 
 describe('Retry after logic', () => {
   const FIXED_JEST_TIMEOUT = 8000;
@@ -299,10 +299,10 @@ describe('Retry after logic', () => {
     });
 
     const preRetryHook = async (
-      input: HttpForgeInput,
+      input: RequestSource,
       retryAttempts: number,
       error: Error,
-      options: HttpForgeOptions
+      options: HttpRequestConfig
     ) => {
       return httpForge.haltRequest();
     };

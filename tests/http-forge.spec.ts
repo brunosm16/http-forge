@@ -3,7 +3,7 @@ import httpForge from '@/main';
 import type {
   FileTransferProgress,
   HttpForgeHooks,
-  HttpForgeOptions,
+  HttpRequestConfig,
 } from './types/http';
 
 import { configTestServer } from './fixtures/config-test-server';
@@ -154,7 +154,7 @@ describe('Http forge tests', () => {
         await Promise.resolve();
       }
 
-      const customPropertyHook = async (options: HttpForgeOptions) => {
+      const customPropertyHook = async (options: HttpRequestConfig) => {
         await mockAsyncCall();
 
         const reqBody = JSON.parse(options.body as string);

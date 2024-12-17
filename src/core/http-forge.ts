@@ -2,12 +2,12 @@
 import type {
   FileTransferHookFunction,
   HttpForgeHooks,
-  HttpForgeInput,
-  HttpForgeOptions,
-  HttpForgeResponseOptions,
-  HttpForgeSearchParams,
-  HttpSupportedResponses,
+  HttpRequestConfig,
+  HttpSearchParams,
+  RequestSource,
+  ResponseHandlerMap,
   RetryPolicyConfig,
+  SupportedHTTPResponses,
 } from '@/types/http';
 
 import {
@@ -28,15 +28,15 @@ import { makeReadTransferStream } from './streams';
 export class HttpForge {
   private haltRequest: boolean = false;
 
-  private httpForgeInput: HttpForgeInput;
+  private httpForgeInput: RequestSource;
 
-  private httpForgeOptions: HttpForgeOptions;
+  private httpForgeOptions: HttpRequestConfig;
 
   private retryAttempts: number = 0;
 
   constructor(
-    httpForgeInput: HttpForgeInput,
-    httpForgeOptions: HttpForgeOptions
+    httpForgeInput: RequestSource,
+    httpForgeOptions: HttpRequestConfig
   ) {
     this.initializeOptions(httpForgeOptions);
 
@@ -48,8 +48,8 @@ export class HttpForge {
   }
 
   static createHttpForge(
-    httpInput: HttpForgeInput,
-    httpForgeOptions?: HttpForgeOptions
+    httpInput: RequestSource,
+    httpForgeOptions?: HttpRequestConfig
   ) {
     const httpForge = new HttpForge(httpInput, httpForgeOptions);
     return httpForge.responseOptions();
@@ -73,7 +73,7 @@ export class HttpForge {
     }
   }
 
-  private appendPrefixToInput(httpForgeInput: HttpForgeInput) {
+  private appendPrefixToInput(httpForgeInput: RequestSource) {
     const { prefixURL } = this.httpForgeOptions;
 
     const urlInput = this.extractUrlFromHttpForgeInput(httpForgeInput);
@@ -100,7 +100,7 @@ export class HttpForge {
   }
 
   private appendSearchParamsToInput(
-    searchParams: HttpForgeSearchParams,
+    searchParams: HttpSearchParams,
     httpInput: string
   ) {
     const resolvedSearchParams = this.resolveSearchParams(searchParams);
@@ -127,7 +127,7 @@ export class HttpForge {
 
   private async doRetry(
     error: Error,
-    type: HttpSupportedResponses,
+    type: SupportedHTTPResponses,
     shouldHandleHttpErrors: boolean
   ) {
     this.retryAttempts += 1;
@@ -151,7 +151,7 @@ export class HttpForge {
 
   private async doRetryAfter(
     error: Error,
-    type: HttpSupportedResponses,
+    type: SupportedHTTPResponses,
     shouldHandleHttpErrors: boolean
   ) {
     this.retryAttempts += 1;
@@ -237,10 +237,10 @@ export class HttpForge {
   }
 
   private async executePreRetryHooks(
-    input: HttpForgeInput,
+    input: RequestSource,
     retryAttempts: number,
     error: Error,
-    options: HttpForgeOptions
+    options: HttpRequestConfig
   ): Promise<void> {
     const { preRetryHooks } = options.hooks;
 
@@ -264,7 +264,7 @@ export class HttpForge {
     await delay(backoff);
   }
 
-  private extractUrlFromHttpForgeInput(httpForgeInput: HttpForgeInput) {
+  private extractUrlFromHttpForgeInput(httpForgeInput: RequestSource) {
     if (httpForgeInput instanceof URL) {
       return httpForgeInput.toString();
     }
@@ -277,7 +277,7 @@ export class HttpForge {
   }
 
   private async fetch(
-    type: HttpSupportedResponses
+    type: SupportedHTTPResponses
   ): Promise<Error | Response | unknown> {
     try {
       await this.executePreRequestHooks();
@@ -335,7 +335,7 @@ export class HttpForge {
     this.httpForgeOptions.abortController = abortController;
   }
 
-  private initializeInput(httpForgeInput: HttpForgeInput) {
+  private initializeInput(httpForgeInput: RequestSource) {
     const prefixedURL = this.appendPrefixToInput(httpForgeInput);
 
     const { searchParams } = this.httpForgeOptions;
@@ -347,7 +347,7 @@ export class HttpForge {
     return prefixedURL;
   }
 
-  private initializeOptions(options: HttpForgeOptions) {
+  private initializeOptions(options: HttpRequestConfig) {
     const {
       headers,
       hooks,
@@ -424,7 +424,7 @@ export class HttpForge {
 
   private async normalizeResponse(
     response: Response,
-    type: HttpSupportedResponses
+    type: SupportedHTTPResponses
   ) {
     const { jsonParser } = this.httpForgeOptions;
 
@@ -462,7 +462,7 @@ export class HttpForge {
     return defaultHooks;
   }
 
-  private resolvePrefixURL(prefix: HttpForgeInput | null) {
+  private resolvePrefixURL(prefix: RequestSource | null) {
     if (!prefix) return null;
 
     const prefixString = this.extractUrlFromHttpForgeInput(prefix);
@@ -475,7 +475,7 @@ export class HttpForge {
     return prefix;
   }
 
-  private resolveSearchParams(searchParams: HttpForgeSearchParams) {
+  private resolveSearchParams(searchParams: HttpSearchParams) {
     if (!searchParams) {
       return null;
     }
@@ -485,7 +485,7 @@ export class HttpForge {
 
   private responseOptions() {
     const responses = SUPPORTED_HTTP_RESPONSES.reduce(
-      (acc: HttpForgeResponseOptions, type: HttpSupportedResponses) => {
+      (acc: ResponseHandlerMap, type: SupportedHTTPResponses) => {
         const updatedAcc = {
           ...acc,
           [type]: () => this.fetch(type),
@@ -493,7 +493,7 @@ export class HttpForge {
 
         return updatedAcc;
       },
-      {} as HttpForgeResponseOptions
+      {} as ResponseHandlerMap
     );
 
     return responses;

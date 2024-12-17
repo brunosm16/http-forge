@@ -1,7 +1,7 @@
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
-import type { HttpForgeInput, HttpForgeOptions } from './types/http';
+import type { HttpRequestConfig, RequestSource } from './types/http';
 
 describe('Retry logic', () => {
   const FIXED_JEST_TIMEOUT = 7000;
@@ -307,10 +307,10 @@ describe('Retry logic', () => {
     });
 
     const preRetryHook = async (
-      input: HttpForgeInput,
+      input: RequestSource,
       retryAttempts: number,
       error: Error,
-      options: HttpForgeOptions
+      options: HttpRequestConfig
     ) => {
       // eslint-disable-next-line no-param-reassign
       options.headers = new Headers({
@@ -348,10 +348,10 @@ describe('Retry logic', () => {
     });
 
     const preRetryHook = async (
-      input: HttpForgeInput,
+      input: RequestSource,
       retryAttempts: number,
       error: Error,
-      options: HttpForgeOptions
+      options: HttpRequestConfig
     ) => {
       expect(input).toEqual(endpoint);
       expect(retryAttempts).toEqual(attempts);
@@ -389,10 +389,10 @@ describe('Retry logic', () => {
     const mockError = new Error('Mock Error');
 
     const preRetryHook = async (
-      input: HttpForgeInput,
+      input: RequestSource,
       retryAttempts: number,
       error: Error,
-      options: HttpForgeOptions
+      options: HttpRequestConfig
     ) => {
       throw mockError;
     };
@@ -429,10 +429,10 @@ describe('Retry logic', () => {
     const mockError = new Error('Mock Error');
 
     const preRetryHook = async (
-      input: HttpForgeInput,
+      input: RequestSource,
       retryAttempts: number,
       error: Error,
-      options: HttpForgeOptions
+      options: HttpRequestConfig
     ) => {
       Promise.reject(mockError);
     };
@@ -467,10 +467,10 @@ describe('Retry logic', () => {
     });
 
     const preRetryHook = async (
-      input: HttpForgeInput,
+      input: RequestSource,
       retryAttempts: number,
       error: Error,
-      options: HttpForgeOptions
+      options: HttpRequestConfig
     ) => {
       return httpForge.haltRequest();
     };

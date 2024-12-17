@@ -1,7 +1,7 @@
 import type {
-  HttpForgeInput,
-  HttpForgeMethods,
-  HttpForgeOptions,
+  HttpMethodHandlers,
+  HttpRequestConfig,
+  RequestSource,
 } from '@/types/http';
 
 import { SUPPORTED_HTTP_VERBS } from '@/constants';
@@ -11,10 +11,10 @@ import { deepMerge } from '@/utils';
 import { HttpForge } from './http-forge';
 
 const buildHttpForge = (
-  httpForgeInput: HttpForgeInput,
-  httpForgeOptions: HttpForgeOptions,
-  method: keyof HttpForgeMethods,
-  defaultOptions?: HttpForgeOptions
+  httpForgeInput: RequestSource,
+  httpForgeOptions: HttpRequestConfig,
+  method: keyof HttpMethodHandlers,
+  defaultOptions?: HttpRequestConfig
 ) => {
   const normalizedMethod = method?.toUpperCase();
 
@@ -24,21 +24,21 @@ const buildHttpForge = (
 
   return HttpForge.createHttpForge(
     httpForgeInput,
-    mergedOptions as HttpForgeOptions
+    mergedOptions as HttpRequestConfig
   );
 };
 
 export const constructHttpForgeMethods = (
-  defaultOptions?: HttpForgeOptions
+  defaultOptions?: HttpRequestConfig
 ) => {
   const httpForgeByMethods = SUPPORTED_HTTP_VERBS.reduce((acc, method) => {
-    const methodOption = method as keyof HttpForgeMethods;
+    const methodOption = method as keyof HttpMethodHandlers;
 
     return {
       ...acc,
       [methodOption]: (
-        httpForgeInput: HttpForgeInput,
-        httpForgeOptions: HttpForgeOptions
+        httpForgeInput: RequestSource,
+        httpForgeOptions: HttpRequestConfig
       ) =>
         buildHttpForge(
           httpForgeInput,
@@ -47,13 +47,13 @@ export const constructHttpForgeMethods = (
           defaultOptions
         ),
     };
-  }, {} as HttpForgeMethods);
+  }, {} as HttpMethodHandlers);
 
-  httpForgeByMethods.extend = (defaultsExtend: HttpForgeOptions = {}) => {
+  httpForgeByMethods.extend = (defaultsExtend: HttpRequestConfig = {}) => {
     const options = deepMerge(
       {},
       { ...defaultOptions, ...defaultsExtend }
-    ) as HttpForgeOptions;
+    ) as HttpRequestConfig;
 
     return constructHttpForgeMethods(options);
   };
