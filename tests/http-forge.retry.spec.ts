@@ -1,7 +1,7 @@
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
-import type { HttpRequestConfig, RequestSource } from './types/http';
+import type { HttpRequestConfig, RequestSource } from './types';
 
 describe('Retry logic', () => {
   const FIXED_JEST_TIMEOUT = 7000;

@@ -1,4 +1,4 @@
-import type { CustomRequestSignals } from '@/enums';
+import type { RequestSignals } from '@/enums';
 
 export type HttpError = {
   errorMessage?: string;
@@ -62,7 +62,7 @@ export type KeyedResponseHandlerMap = {
 
 export type HandlerExtensions = {
   extend: (defaultOptions?: HttpRequestConfig) => HttpMethodHandlers;
-  haltRequest: () => CustomRequestSignals.HALT_REQUEST_SIGNAL;
+  haltRequest: () => RequestSignals.HALT_REQUEST_SIGNAL;
 };
 
 export type HttpMethodHandlers = HandlerExtensions & KeyedResponseHandlerMap;
@@ -83,7 +83,7 @@ export type PreRetryHook = (
   retryAttempts: number,
   error: Error,
   options: HttpRequestConfig
-) => Promise<CustomRequestSignals.HALT_REQUEST_SIGNAL> | Promise<void>;
+) => Promise<RequestSignals.HALT_REQUEST_SIGNAL> | Promise<void>;
 
 export type TransferHook = (
   transferStatus: TransferStatus,

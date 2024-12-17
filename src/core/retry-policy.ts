@@ -1,4 +1,4 @@
-import type { RetryPolicyConfig } from '@/types/http';
+import type { RetryPolicyConfig } from '@/types';
 
 import {
   DEFAULT_HTTP_RETRY_ATTEMPTS,

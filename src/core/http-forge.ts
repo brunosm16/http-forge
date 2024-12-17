@@ -8,7 +8,7 @@ import type {
   RetryPolicyConfig,
   SupportedHTTPResponses,
   TransferHook,
-} from '@/types/http';
+} from '@/types';
 
 import {
   DEFAULT_DELAY_AFTER_MS,
@@ -18,7 +18,7 @@ import {
   DEFAULT_HTTP_TIMEOUT_MS,
   SUPPORTED_HTTP_RESPONSES,
 } from '@/constants';
-import { CustomRequestSignals } from '@/enums';
+import { RequestSignals } from '@/enums';
 import { HttpError, TimeoutError } from '@/errors';
 import { delay, isTimeStamp, timeout } from '@/utils';
 
@@ -248,7 +248,7 @@ export class HttpForge {
       for await (const hook of preRetryHooks) {
         const resultHook = await hook(input, retryAttempts, error, options);
 
-        if (resultHook === CustomRequestSignals.HALT_REQUEST_SIGNAL) {
+        if (resultHook === RequestSignals.HALT_REQUEST_SIGNAL) {
           this.haltRequest = true;
           return;
         }

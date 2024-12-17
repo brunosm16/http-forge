@@ -2,10 +2,10 @@ import type {
   HttpMethodHandlers,
   HttpRequestConfig,
   RequestSource,
-} from '@/types/http';
+} from '@/types';
 
 import { SUPPORTED_HTTP_VERBS } from '@/constants';
-import { CustomRequestSignals } from '@/enums';
+import { RequestSignals } from '@/enums';
 import { deepMerge } from '@/utils';
 
 import { HttpForge } from './http-forge';
@@ -58,8 +58,7 @@ export const constructHttpForgeMethods = (
     return constructHttpForgeMethods(options);
   };
 
-  httpForgeByMethods.haltRequest = () =>
-    CustomRequestSignals.HALT_REQUEST_SIGNAL;
+  httpForgeByMethods.haltRequest = () => RequestSignals.HALT_REQUEST_SIGNAL;
 
   return httpForgeByMethods;
 };

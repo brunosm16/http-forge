@@ -1,4 +1,4 @@
-import type { TransferHook, TransferStatus } from '@/types/http';
+import type { TransferHook, TransferStatus } from '@/types';
 
 const calculatePercentage = (fileSize: number, bytesDownloaded: number) => {
   if (!fileSize || !bytesDownloaded) {

@@ -1,4 +1,4 @@
-import type { SupportedHTTPResponses, SupportedHTTPVerbs } from '@/types/http';
+import type { SupportedHTTPResponses, SupportedHTTPVerbs } from '@/types';
 
 import { HTTP_STATUS_CODES } from './http-status-codes';
 

@@ -1,10 +1,6 @@
 import httpForge from '@/main';
 
-import type {
-  HttpRequestConfig,
-  RequestHooks,
-  TransferStatus,
-} from './types/http';
+import type { HttpRequestConfig, RequestHooks, TransferStatus } from './types';
 
 import { configTestServer } from './fixtures/config-test-server';
 
