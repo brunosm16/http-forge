@@ -1,9 +1,9 @@
 import httpForge from '@/main';
 
 import type {
-  FileTransferProgress,
-  HttpForgeHooks,
   HttpRequestConfig,
+  RequestHooks,
+  TransferStatus,
 } from './types/http';
 
 import { configTestServer } from './fixtures/config-test-server';
@@ -555,14 +555,14 @@ describe('Http forge tests', () => {
 
     it('Should provide progress information', async () => {
       const transferredData: Array<{
-        fileTransferProgress: FileTransferProgress;
+        fileTransferProgress: TransferStatus;
         transferredValue: string;
       }> = [];
 
       const endpoint = `${serverTest.url}/file-transfer`;
 
       const fileTransferHook = (
-        fileTransferProgress: FileTransferProgress,
+        fileTransferProgress: TransferStatus,
         chunk: Uint8Array
       ) => {
         const transferredValue = String.fromCharCode(...chunk);
@@ -573,8 +573,8 @@ describe('Http forge tests', () => {
         });
       };
 
-      const hooks: HttpForgeHooks = {
-        fileTransferHook,
+      const hooks: RequestHooks = {
+        transferHook: fileTransferHook,
       };
 
       await httpForge
@@ -602,14 +602,14 @@ describe('Http forge tests', () => {
 
     it('Should not provide progress information without file-size', async () => {
       const transferredData: Array<{
-        fileTransferProgress: FileTransferProgress;
+        fileTransferProgress: TransferStatus;
         transferredValue: string;
       }> = [];
 
       const endpoint = `${serverTest.url}/file-transfer-no-size`;
 
       const fileTransferHook = (
-        fileTransferProgress: FileTransferProgress,
+        fileTransferProgress: TransferStatus,
         chunk: Uint8Array
       ) => {
         const transferredValue = String.fromCharCode(...chunk);
@@ -620,8 +620,8 @@ describe('Http forge tests', () => {
         });
       };
 
-      const hooks: HttpForgeHooks = {
-        fileTransferHook,
+      const hooks: RequestHooks = {
+        transferHook: fileTransferHook,
       };
 
       await httpForge

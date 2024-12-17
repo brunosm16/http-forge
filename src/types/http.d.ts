@@ -14,7 +14,7 @@ export type HttpSearchParams =
 export type HttpRequestConfig = {
   [key: string]: unknown;
   abortController?: AbortController;
-  hooks?: HttpForgeHooks;
+  hooks?: RequestHooks;
   jsonBody?: unknown;
   jsonParser?: (data: string) => unknown;
   prefixURL?: RequestSource | null;
@@ -67,34 +67,30 @@ export type HandlerExtensions = {
 
 export type HttpMethodHandlers = HandlerExtensions & KeyedResponseHandlerMap;
 
-export type HttpForgeHooks = {
-  fileTransferHook?: FileTransferHookFunction;
-  preRequestHooks?: HttpPreRequestHookFunction[];
-  preResponseHooks?: HttpPreResponseHookFunction[];
-  preRetryHooks?: HttpPreRetryHookFunction[];
+export type RequestHooks = {
+  preRequestHooks?: PreRequestHook[];
+  preResponseHooks?: PreResponseHook[];
+  preRetryHooks?: PreRetryHook[];
+  transferHook?: TransferHook;
 };
 
-export type HttpPreRequestHookFunction = (
-  options: HttpRequestOptions
-) => Promise<void>;
+export type PreRequestHook = (options: HttpRequestOptions) => Promise<void>;
 
-export type HttpPreResponseHookFunction = (
-  response: Response
-) => Promise<Response>;
+export type PreResponseHook = (response: Response) => Promise<Response>;
 
-export type HttpPreRetryHookFunction = (
-  input: RequestSource,
+export type PreRetryHook = (
+  requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
   options: HttpRequestConfig
 ) => Promise<CustomRequestSignals.HALT_REQUEST_SIGNAL> | Promise<void>;
 
-export type FileTransferHookFunction = (
-  fileTransferProgress: FileTransferProgress,
+export type TransferHook = (
+  transferStatus: TransferStatus,
   chunk: Uint8Array
 ) => void;
 
-export type FileTransferProgress = {
+export type TransferStatus = {
   bytesDownloaded: number;
   fileSize: number;
   percentage: number;

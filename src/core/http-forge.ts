@@ -1,13 +1,13 @@
 /* eslint-disable no-restricted-syntax */
 import type {
-  FileTransferHookFunction,
-  HttpForgeHooks,
   HttpRequestConfig,
   HttpSearchParams,
+  RequestHooks,
   RequestSource,
   ResponseHandlerMap,
   RetryPolicyConfig,
   SupportedHTTPResponses,
+  TransferHook,
 } from '@/types/http';
 
 import {
@@ -201,7 +201,7 @@ export class HttpForge {
   private async executePreResponseHooks(response: Response) {
     const { hooks } = this.httpForgeOptions;
 
-    const { fileTransferHook, preResponseHooks } = hooks;
+    const { preResponseHooks, transferHook: fileTransferHook } = hooks;
 
     if (!preResponseHooks?.length) {
       if (fileTransferHook) {
@@ -450,10 +450,10 @@ export class HttpForge {
     return this.getRetryAfterNumber(retryAfterHeader);
   }
 
-  private resolveHooks(hooks: HttpForgeHooks) {
+  private resolveHooks(hooks: RequestHooks) {
     if (hooks) return hooks;
 
-    const defaultHooks: HttpForgeHooks = {
+    const defaultHooks: RequestHooks = {
       preRequestHooks: [],
       preResponseHooks: [],
       preRetryHooks: [],
@@ -529,7 +529,7 @@ export class HttpForge {
 
   private streamFileTransfer(
     response: Response,
-    fileTransferHook: FileTransferHookFunction
+    fileTransferHook: TransferHook
   ) {
     const readTransferStream = makeReadTransferStream(
       response,

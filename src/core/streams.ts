@@ -1,7 +1,4 @@
-import type {
-  FileTransferHookFunction,
-  FileTransferProgress,
-} from '@/types/http';
+import type { TransferHook, TransferStatus } from '@/types/http';
 
 const calculatePercentage = (fileSize: number, bytesDownloaded: number) => {
   if (!fileSize || !bytesDownloaded) {
@@ -13,7 +10,7 @@ const calculatePercentage = (fileSize: number, bytesDownloaded: number) => {
 
 export const makeReadTransferStream = (
   response: Response,
-  fileTransferHook: FileTransferHookFunction
+  fileTransferHook: TransferHook
 ) => {
   const readStream = new ReadableStream({
     start(controller: ReadableStreamDefaultController<any>) {
@@ -24,7 +21,7 @@ export const makeReadTransferStream = (
       const reader = response.body.getReader();
 
       if (fileTransferHook) {
-        const transferInitialState: FileTransferProgress = {
+        const transferInitialState: TransferStatus = {
           bytesDownloaded: 0,
           fileSize,
           percentage: 0,
@@ -46,7 +43,7 @@ export const makeReadTransferStream = (
 
           const percentage = calculatePercentage(fileSize, bytesDownloaded);
 
-          const transferState: FileTransferProgress = {
+          const transferState: TransferStatus = {
             bytesDownloaded,
             fileSize,
             percentage,
