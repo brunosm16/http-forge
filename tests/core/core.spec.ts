@@ -63,4 +63,25 @@ describe('Core Tests', () => {
       expect(result).toEqual('Hey this is a successful PUT response');
     });
   });
+
+  describe('Error Handling', () => {
+    it('Should handle a 200 response with empty JSON and return an appropriate error message', async () => {
+      const endpoint = `${server.url}/empty-response`;
+      let errorMessage: null | string = null;
+
+      try {
+        await httpForge.get(endpoint).json();
+      } catch (err) {
+        errorMessage = err?.message;
+      }
+
+      expect(errorMessage).toEqual('Unexpected end of JSON input');
+    });
+
+    it('Should handle a 204 response with empty JSON and return an appropriate error message', async () => {
+      const endpoint = `${server.url}/no-content`;
+      const result = await httpForge.get(endpoint).json();
+      expect(result).toEqual('');
+    });
+  });
 });
