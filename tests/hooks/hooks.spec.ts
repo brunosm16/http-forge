@@ -245,7 +245,7 @@ describe('Hooks Tests', () => {
       expect(finalPercentage).toEqual(1);
     });
 
-    it('Should not provide progress information without file-size', async () => {
+    it('Should not provide progress information if file-size not informed', async () => {
       const transferredData: TransferredData = [];
 
       const fileTransferHook = (

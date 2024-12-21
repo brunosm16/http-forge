@@ -96,6 +96,11 @@ export type TransferStatus = {
   percentage: number;
 };
 
+export type TransferredData = Array<{
+  fileTransferProgress: TransferStatus;
+  transferredValue: string;
+}>;
+
 export type RetryPolicyConfig = {
   allowedRetryAfterStatusCodes?: number[];
 
