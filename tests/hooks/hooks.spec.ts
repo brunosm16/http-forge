@@ -1,3 +1,5 @@
+import type { TransferStatus, TransferredData } from '@/types';
+
 import httpForge from '@/main';
 
 import { configTestServer } from '../fixtures/config-test-server';
@@ -199,6 +201,88 @@ describe('Hooks Tests', () => {
         email: 'jonhdoe@email.com',
         username: 'jonhdoe',
       });
+    });
+  });
+
+  describe('TransferHook', () => {
+    it('Should provide progress information', async () => {
+      const transferredData: TransferredData = [];
+
+      const fileTransferHook = (
+        fileTransferProgress: TransferStatus,
+        chunk: Uint8Array
+      ) => {
+        transferredData.push({
+          fileTransferProgress,
+          transferredValue: String.fromCharCode(...chunk),
+        });
+      };
+
+      const endpoint = `${server.url}/file-transfer`;
+
+      await httpForge
+        .get(endpoint, {
+          hooks: {
+            transferHook: fileTransferHook,
+          },
+        })
+        .text();
+
+      const initialPercentage =
+        transferredData[0]?.fileTransferProgress?.percentage;
+
+      const midArrayLength = transferredData.length / 2;
+
+      const midPercentage =
+        transferredData[midArrayLength]?.fileTransferProgress?.percentage;
+
+      const finalPercentage =
+        transferredData[transferredData.length - 1]?.fileTransferProgress
+          ?.percentage;
+
+      expect(initialPercentage).toEqual(0);
+      expect(midPercentage).toBeGreaterThan(0);
+      expect(finalPercentage).toEqual(1);
+    });
+
+    it('Should not provide progress information without file-size', async () => {
+      const transferredData: TransferredData = [];
+
+      const fileTransferHook = (
+        fileTransferProgress: TransferStatus,
+        chunk: Uint8Array
+      ) => {
+        transferredData.push({
+          fileTransferProgress,
+          transferredValue: String.fromCharCode(...chunk),
+        });
+      };
+
+      const endpoint = `${server.url}/file-transfer-no-size`;
+
+      await httpForge
+        .get(endpoint, {
+          hooks: {
+            transferHook: fileTransferHook,
+          },
+        })
+        .text();
+
+      const initialPercentage =
+        transferredData[0]?.fileTransferProgress?.percentage;
+
+      const midArrayLength = transferredData.length / 2;
+
+      const midPercentage =
+        transferredData[midArrayLength]?.fileTransferProgress?.percentage;
+
+      const finalPercentage =
+        transferredData[transferredData.length - 1]?.fileTransferProgress
+          ?.percentage;
+
+      expect(initialPercentage).toEqual(0);
+      expect(midPercentage).toEqual(0);
+      expect(finalPercentage).toEqual(0);
     });
   });
 });
