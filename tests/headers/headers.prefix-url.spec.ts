@@ -90,4 +90,31 @@ describe('PrefixURL Header Tests', () => {
       "'HttpForgeInput' cannot starts with '/' when using a prefixURL"
     );
   });
+
+  it('Should accept queryParams and prefixURL as URL object', async () => {
+    const prefixURL = new URL(`${serverTest.url}/?page=`);
+    const page = 'http://mock-query-page/';
+
+    const result = await httpForge.get(page, { prefixURL }).text();
+
+    expect(result).toEqual('mock-query-page response');
+  });
+
+  it('Should accept queryParams and page as URL object', async () => {
+    const prefixURL = `${serverTest.url}/?page=`;
+    const page = new URL('http://mock-query-page');
+
+    const result = await httpForge.get(page, { prefixURL }).text();
+
+    expect(result).toEqual('mock-query-page response');
+  });
+
+  it('Should accept queryParams with both page and prefixURL as URL objects', async () => {
+    const prefixURL = new URL(`${serverTest.url}/?page=`);
+    const page = new URL('http://mock-query-page');
+
+    const result = await httpForge.get(page, { prefixURL }).text();
+
+    expect(result).toEqual('mock-query-page response');
+  });
 });
