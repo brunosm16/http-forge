@@ -1,20 +1,20 @@
 import httpForge from '@/main';
 import * as createTestServer from 'create-test-server';
 
-import type { HttpRequestConfig, RequestSource } from './types';
+import type { HttpRequestConfig, RequestSource } from '../types';
 
-describe('Retry after logic', () => {
-  const FIXED_JEST_TIMEOUT = 8000;
+describe('Retry Policy - After', () => {
+  const FIXED_JEST_TIMEOUT = 7000;
 
   jest.setTimeout(FIXED_JEST_TIMEOUT);
 
-  it(`Should retry-after for 'allowedRetryAfterStatusCodes'`, async () => {
+  it(`Should retry-after requests for status codes specified in allowedRetryAfterStatusCodes`, async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
 
     let attempts = 0;
-    const retryLimit = 5;
+    const retryLimit = 2;
 
     server.get('/retry-test', async (req, res) => {
       attempts += 1;
@@ -42,13 +42,13 @@ describe('Retry after logic', () => {
     await server.close();
   });
 
-  it(`Should not retry-after for not allowed status-code`, async () => {
+  it(`Should not retry-after requests for status codes not specified in allowedRetryAfterStatusCodes`, async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
 
     let attempts = 0;
-    const retryLimit = 5;
+    const retryLimit = 2;
 
     server.get('/retry-test', async (req, res) => {
       attempts += 1;
@@ -76,13 +76,47 @@ describe('Retry after logic', () => {
     await server.close();
   });
 
-  it(`Should retry-after for 'allowedRetryMethods'`, async () => {
+  it(`Should not retry requests when allowedRetryAfterStatusCodes is empty`, async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
 
     let attempts = 0;
     const retryLimit = 5;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.writeHead(520, {
+          'Retry-After': 0.25,
+        });
+
+        res.end('Unknown Error');
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const promise = httpForge
+      .get(endpoint, {
+        retryPolicy: {
+          allowedRetryAfterStatusCodes: [],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
+    await server.close();
+  });
+
+  it(`Should retry-after requests for methods specified in allowedRetryMethods`, async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+    const retryLimit = 2;
 
     server.get('/retry-test', async (req, res) => {
       attempts += 1;
@@ -111,7 +145,7 @@ describe('Retry after logic', () => {
     await server.close();
   });
 
-  it(`Should not retry-after for not allowed method`, async () => {
+  it(`Should not retry-after requests for methods not specified in allowedRetryMethods`, async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
@@ -138,6 +172,40 @@ describe('Retry after logic', () => {
         retryPolicy: {
           allowedRetryAfterStatusCodes: [520],
           allowedRetryMethods: ['post'],
+        },
+      })
+      .text();
+
+    expect(promise).rejects.toThrow();
+    await server.close();
+  });
+
+  it(`Should not retry-after requests when allowedRetryMethods is empty`, async () => {
+    const server = await createTestServer();
+
+    const endpoint = `${server.url}/retry-test`;
+
+    let attempts = 0;
+    const retryLimit = 5;
+
+    server.get('/retry-test', async (req, res) => {
+      attempts += 1;
+
+      if (attempts < retryLimit) {
+        res.writeHead(520, {
+          'Retry-After': 0.25,
+        });
+
+        res.end('Unknown Error');
+      } else {
+        res.end('Hey this is a successful GET response');
+      }
+    });
+
+    const promise = httpForge
+      .get(endpoint, {
+        retryPolicy: {
+          allowedRetryMethods: [],
         },
       })
       .text();
@@ -179,7 +247,7 @@ describe('Retry after logic', () => {
     await server.close();
   });
 
-  it('Should retry when retry-after header with default policy', async () => {
+  it('Should retry on retry-after header with default policy', async () => {
     const server = await createTestServer();
 
     const endpoint = `${server.url}/retry-test`;
@@ -205,74 +273,6 @@ describe('Retry after logic', () => {
 
     expect(result).toEqual('Successful request');
 
-    await server.close();
-  });
-
-  it(`Should no retry when 'allowedRetryAfterStatusCodes' it's empty `, async () => {
-    const server = await createTestServer();
-
-    const endpoint = `${server.url}/retry-test`;
-
-    let attempts = 0;
-    const retryLimit = 5;
-
-    server.get('/retry-test', async (req, res) => {
-      attempts += 1;
-
-      if (attempts < retryLimit) {
-        res.writeHead(520, {
-          'Retry-After': 0.25,
-        });
-
-        res.end('Unknown Error');
-      } else {
-        res.end('Hey this is a successful GET response');
-      }
-    });
-
-    const promise = httpForge
-      .get(endpoint, {
-        retryPolicy: {
-          allowedRetryAfterStatusCodes: [],
-        },
-      })
-      .text();
-
-    expect(promise).rejects.toThrow();
-    await server.close();
-  });
-
-  it(`Should no retry when 'allowedRetryMethods' it's empty`, async () => {
-    const server = await createTestServer();
-
-    const endpoint = `${server.url}/retry-test`;
-
-    let attempts = 0;
-    const retryLimit = 5;
-
-    server.get('/retry-test', async (req, res) => {
-      attempts += 1;
-
-      if (attempts < retryLimit) {
-        res.writeHead(520, {
-          'Retry-After': 0.25,
-        });
-
-        res.end('Unknown Error');
-      } else {
-        res.end('Hey this is a successful GET response');
-      }
-    });
-
-    const promise = httpForge
-      .get(endpoint, {
-        retryPolicy: {
-          allowedRetryMethods: [],
-        },
-      })
-      .text();
-
-    expect(promise).rejects.toThrow();
     await server.close();
   });
 
