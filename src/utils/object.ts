@@ -1,4 +1,4 @@
-const isObject = (input: unknown): boolean =>
+export const isObject = (input: unknown): input is object =>
   input !== null && typeof input === 'object';
 
 export const deepMerge = (...inputs: unknown[]): [] | object => {

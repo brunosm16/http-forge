@@ -1,3 +1,3 @@
 export * from './async';
 export * from './date';
-export * from './object-utils';
+export * from './object';
