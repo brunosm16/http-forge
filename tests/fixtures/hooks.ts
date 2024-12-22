@@ -1,4 +1,7 @@
-import type { HttpRequestConfig } from '@/types';
+/* eslint-disable unused-imports/no-unused-vars */
+import type { HttpRequestConfig, RequestSource } from '@/types';
+
+const mockError = new Error('Mock Error');
 
 async function mockAsyncCall() {
   await Promise.resolve();
@@ -26,4 +29,37 @@ export const customResponseHook = async (response: Response) => {
     status: 200,
     statusText: 'OK',
   });
+};
+
+export const preRetryHook = async (
+  input: RequestSource,
+  retryAttempts: number,
+  error: Error,
+  options: HttpRequestConfig
+) => {
+  // eslint-disable-next-line no-param-reassign
+  options.headers = new Headers({
+    customHeader: 'This is a custom header',
+    error: error.message,
+    input: JSON.stringify(input),
+    retryAttempts: retryAttempts.toString(),
+  });
+};
+
+export const preRetryHookError = async (
+  input: RequestSource,
+  retryAttempts: number,
+  error: Error,
+  options: HttpRequestConfig
+) => {
+  throw mockError;
+};
+
+export const preRetryHookReject = async (
+  input: RequestSource,
+  retryAttempts: number,
+  error: Error,
+  options: HttpRequestConfig
+) => {
+  Promise.reject(mockError);
 };
