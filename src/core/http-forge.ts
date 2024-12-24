@@ -84,7 +84,7 @@ export class HttpForge {
 
     if (url?.startsWith('/')) {
       throw new Error(
-        `'HttpForgeInput' cannot starts with '/' when using a prefixURL`
+        `'RequestSource' cannot starts with '/' when using a prefixURL`
       );
     }
 
@@ -101,11 +101,11 @@ export class HttpForge {
 
   private appendSearchParamsToURL(
     searchParams: HttpSearchParams,
-    httpInput: string
+    baseURL: string
   ) {
     const resolvedSearchParams = this.resolveSearchParams(searchParams);
 
-    const url = new URL(httpInput);
+    const url = new URL(baseURL);
 
     url.search = resolvedSearchParams.toString();
 
@@ -237,7 +237,7 @@ export class HttpForge {
   }
 
   private async executePreRetryHooks(
-    input: RequestSource,
+    requestSource: RequestSource,
     retryAttempts: number,
     error: Error,
     options: HttpRequestConfig
@@ -246,7 +246,12 @@ export class HttpForge {
 
     if (preRetryHooks?.length) {
       for await (const hook of preRetryHooks) {
-        const resultHook = await hook(input, retryAttempts, error, options);
+        const resultHook = await hook(
+          requestSource,
+          retryAttempts,
+          error,
+          options
+        );
 
         if (resultHook === RequestSignals.HALT_REQUEST_SIGNAL) {
           this.haltRequest = true;
@@ -264,16 +269,16 @@ export class HttpForge {
     await delay(backoff);
   }
 
-  private extractURLFromRequestSource(httpForgeInput: RequestSource) {
-    if (httpForgeInput instanceof URL) {
-      return httpForgeInput.toString();
+  private extractURLFromRequestSource(requestSource: RequestSource) {
+    if (requestSource instanceof URL) {
+      return requestSource.toString();
     }
 
-    if (httpForgeInput instanceof Request) {
-      return httpForgeInput.url;
+    if (requestSource instanceof Request) {
+      return requestSource.url;
     }
 
-    return httpForgeInput;
+    return requestSource;
   }
 
   private async fetch(
@@ -438,8 +443,8 @@ export class HttpForge {
     return this.getRetryAfterNumber(retryAfterHeader);
   }
 
-  private prepareRequestSource(httpForgeInput: RequestSource) {
-    const prefixedURL = this.appendPrefixToRequestSource(httpForgeInput);
+  private prepareRequestSource(requestSource: RequestSource) {
+    const prefixedURL = this.appendPrefixToRequestSource(requestSource);
 
     const { searchParams } = this.httpForgeOptions;
 
