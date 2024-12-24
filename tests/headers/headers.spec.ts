@@ -2,7 +2,7 @@ import httpForge from '@/main';
 
 import { configTestServer } from '../fixtures/config-test-server';
 
-describe('Headers Options', () => {
+describe('Headers tests', () => {
   let server: any = null;
 
   beforeAll(async () => {
