@@ -32,7 +32,7 @@ export const customResponseHook = async (response: Response) => {
 };
 
 export const preRetryHook = async (
-  input: RequestSource,
+  requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
   options: HttpRequestConfig
@@ -41,13 +41,13 @@ export const preRetryHook = async (
   options.headers = new Headers({
     customHeader: 'This is a custom header',
     error: error.message,
-    input: JSON.stringify(input),
+    requestSource: JSON.stringify(requestSource),
     retryAttempts: retryAttempts.toString(),
   });
 };
 
 export const preRetryHookError = async (
-  input: RequestSource,
+  requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
   options: HttpRequestConfig
@@ -56,7 +56,7 @@ export const preRetryHookError = async (
 };
 
 export const preRetryHookReject = async (
-  input: RequestSource,
+  requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
   options: HttpRequestConfig

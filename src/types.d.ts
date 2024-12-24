@@ -55,7 +55,7 @@ export type ResponseHandlerMap = Record<
 
 export type KeyedResponseHandlerMap = {
   [key in SupportedHTTPVerbs]: (
-    httpForgeInput: RequestSource,
+    requestSource: RequestSource,
     defaultOptions?: HttpRequestConfig
   ) => ResponseHandlerMap;
 };

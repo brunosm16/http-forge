@@ -345,12 +345,12 @@ describe('Retry logic', () => {
       });
 
       const customPreRetryHook = async (
-        input: RequestSource,
+        requestSource: RequestSource,
         retryAttempts: number,
         error: Error,
         options: HttpRequestConfig
       ) => {
-        expect(input).toEqual(endpoint);
+        expect(requestSource).toEqual(endpoint);
         expect(retryAttempts).toEqual(attempts);
         expect(error?.message).toEqual('Service Unavailable');
         expect(options).toBeTruthy();
@@ -442,7 +442,7 @@ describe('Retry logic', () => {
       });
 
       const retryHookHaltRequest = async (
-        input: RequestSource,
+        requestSource: RequestSource,
         retryAttempts: number,
         error: Error,
         options: HttpRequestConfig

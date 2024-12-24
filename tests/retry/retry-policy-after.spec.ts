@@ -299,7 +299,7 @@ describe('Retry Policy - After', () => {
     });
 
     const preRetryHook = async (
-      input: RequestSource,
+      requestSource: RequestSource,
       retryAttempts: number,
       error: Error,
       options: HttpRequestConfig
