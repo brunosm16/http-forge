@@ -87,7 +87,7 @@ describe('PrefixURL Header Tests', () => {
     }
 
     expect(error).toEqual(
-      "'HttpForgeInput' cannot starts with '/' when using a prefixURL"
+      "'RequestSource' cannot starts with '/' when using a prefixURL"
     );
   });
 

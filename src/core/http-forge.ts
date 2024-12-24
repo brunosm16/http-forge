@@ -28,17 +28,14 @@ import { makeReadTransferStream } from './streams';
 export class HttpForge {
   private haltRequest: boolean = false;
 
-  private httpForgeOptions: HttpRequestConfig;
+  private requestConfig: HttpRequestConfig;
 
   private requestSource: RequestSource;
 
   private retryAttempts: number = 0;
 
-  constructor(
-    requestSource: RequestSource,
-    httpForgeOptions: HttpRequestConfig
-  ) {
-    this.initializeOptions(httpForgeOptions);
+  constructor(requestSource: RequestSource, requestConfig: HttpRequestConfig) {
+    this.prepareRequestConfig(requestConfig);
 
     this.initializeSignal();
 
@@ -49,14 +46,14 @@ export class HttpForge {
 
   static createHttpForgeInstance(
     requestSource: RequestSource,
-    httpForgeOptions?: HttpRequestConfig
+    requestConfig?: HttpRequestConfig
   ) {
-    const httpForge = new HttpForge(requestSource, httpForgeOptions);
-    return httpForge.responseOptions();
+    const httpForge = new HttpForge(requestSource, requestConfig);
+    return httpForge.mapResponseHandlers();
   }
 
   private appendJSONBody() {
-    const { body, jsonBody } = this.httpForgeOptions;
+    const { body, jsonBody } = this.requestConfig;
 
     if (jsonBody && body) {
       throw new Error(
@@ -65,16 +62,13 @@ export class HttpForge {
     }
 
     if (jsonBody) {
-      this.httpForgeOptions.requestHeaders.set(
-        'Content-Type',
-        'application/json'
-      );
-      this.httpForgeOptions.body = JSON.stringify(jsonBody);
+      this.requestConfig.requestHeaders.set('Content-Type', 'application/json');
+      this.requestConfig.body = JSON.stringify(jsonBody);
     }
   }
 
   private appendPrefixToRequestSource(requestSource: RequestSource) {
-    const { prefixURL } = this.httpForgeOptions;
+    const { prefixURL } = this.requestConfig;
 
     const url = this.extractURLFromRequestSource(requestSource);
 
@@ -90,7 +84,7 @@ export class HttpForge {
 
     const normalizeURL = prefixURL + url;
 
-    const { searchParams } = this.httpForgeOptions;
+    const { searchParams } = this.requestConfig;
 
     if (searchParams) {
       return this.appendSearchParamsToURL(searchParams, normalizeURL);
@@ -136,7 +130,7 @@ export class HttpForge {
       this.requestSource,
       this.retryAttempts,
       error,
-      this.httpForgeOptions
+      this.requestConfig
     );
 
     if (this.haltRequest) {
@@ -155,12 +149,12 @@ export class HttpForge {
     shouldHandleHttpErrors: boolean
   ) {
     this.retryAttempts += 1;
-    await this.applyRetryAfterDelay(error, this.httpForgeOptions?.retryPolicy);
+    await this.applyRetryAfterDelay(error, this.requestConfig?.retryPolicy);
     await this.executePreRetryHooks(
       this.requestSource,
       this.retryAttempts,
       error,
-      this.httpForgeOptions
+      this.requestConfig
     );
 
     if (this.haltRequest) {
@@ -178,7 +172,7 @@ export class HttpForge {
     const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
     const errorStatusCode = anyError?.response?.status;
 
-    const { allowedRetryAfterStatusCodes } = this.httpForgeOptions.retryPolicy;
+    const { allowedRetryAfterStatusCodes } = this.requestConfig.retryPolicy;
 
     const hasRetryAfterStatusCode =
       allowedRetryAfterStatusCodes.includes(errorStatusCode);
@@ -187,19 +181,19 @@ export class HttpForge {
   }
 
   private async executePreRequestHooks() {
-    const { hooks } = this.httpForgeOptions;
+    const { hooks } = this.requestConfig;
 
     const preRequestHooks = hooks?.preRequestHooks;
 
     if (preRequestHooks?.length) {
       for await (const hook of preRequestHooks) {
-        await hook(this.httpForgeOptions);
+        await hook(this.requestConfig);
       }
     }
   }
 
   private async executePreResponseHooks(response: Response) {
-    const { hooks } = this.httpForgeOptions;
+    const { hooks } = this.requestConfig;
 
     const { preResponseHooks, transferHook: fileTransferHook } = hooks;
 
@@ -221,9 +215,9 @@ export class HttpForge {
       }
     }
 
-    const { jsonParser } = this.httpForgeOptions;
+    const { jsonParser } = this.requestConfig;
 
-    if (this.httpForgeOptions.jsonParser) {
+    if (this.requestConfig.jsonParser) {
       responseResult.json = async () => {
         return this.useJsonParser(responseResult, jsonParser);
       };
@@ -240,9 +234,9 @@ export class HttpForge {
     requestSource: RequestSource,
     retryAttempts: number,
     error: Error,
-    options: HttpRequestConfig
+    requestConfig: HttpRequestConfig
   ): Promise<void> {
-    const { preRetryHooks } = options.hooks;
+    const { preRetryHooks } = requestConfig.hooks;
 
     if (preRetryHooks?.length) {
       for await (const hook of preRetryHooks) {
@@ -250,7 +244,7 @@ export class HttpForge {
           requestSource,
           retryAttempts,
           error,
-          options
+          requestConfig
         );
 
         if (resultHook === RequestSignals.HALT_REQUEST_SIGNAL) {
@@ -287,9 +281,9 @@ export class HttpForge {
     try {
       await this.executePreRequestHooks();
 
-      const fetchFn = fetch(this.requestSource, this.httpForgeOptions);
+      const fetchFn = fetch(this.requestSource, this.requestConfig);
 
-      const { abortController, timeoutLength } = this.httpForgeOptions;
+      const { abortController, timeoutLength } = this.requestConfig;
 
       const response = await timeout(fetchFn, timeoutLength, abortController);
 
@@ -301,7 +295,7 @@ export class HttpForge {
 
       return await this.normalizeResponse(responseHook, type);
     } catch (error) {
-      const { shouldHandleHttpErrors } = this.httpForgeOptions;
+      const { shouldHandleHttpErrors } = this.requestConfig;
 
       if (this.shouldRetryAfter(error)) {
         return this.doRetryAfter(error, type, shouldHandleHttpErrors);
@@ -337,47 +331,11 @@ export class HttpForge {
 
   private initializeAbortController() {
     const abortController = new AbortController();
-    this.httpForgeOptions.abortController = abortController;
-  }
-
-  private initializeOptions(options: HttpRequestConfig) {
-    const {
-      headers,
-      hooks,
-      prefixURL,
-      retryPolicy,
-      searchParams,
-      shouldHandleHttpErrors = true,
-      signal,
-      timeoutLength,
-    } = options;
-
-    const resolvedRetry = buildRetryPolicyConfig(retryPolicy);
-
-    const resolvedTimeout = timeoutLength ?? DEFAULT_HTTP_TIMEOUT_MS;
-
-    const resolvedHeaders = new Headers(headers ?? {});
-
-    const resolvedHooks = this.resolveHooks(hooks);
-
-    const resolvedPrefixURL = this.resolvePrefixURL(prefixURL);
-
-    this.httpForgeOptions = {
-      ...options,
-      credentials: DEFAULT_HTTP_CREDENTIALS,
-      hooks: resolvedHooks,
-      prefixURL: resolvedPrefixURL,
-      requestHeaders: resolvedHeaders,
-      retryPolicy: resolvedRetry,
-      searchParams,
-      shouldHandleHttpErrors,
-      signal,
-      timeoutLength: resolvedTimeout,
-    };
+    this.requestConfig.abortController = abortController;
   }
 
   private initializeSignal() {
-    const { signal } = this.httpForgeOptions;
+    const { signal } = this.requestConfig;
 
     if (!signal) {
       return;
@@ -385,15 +343,15 @@ export class HttpForge {
 
     this.initializeAbortController();
 
-    const { abortController } = this.httpForgeOptions;
+    const { abortController } = this.requestConfig;
 
-    const optionSignal = signal;
+    const requestConfigSinal = signal;
 
-    optionSignal.addEventListener('abort', () => {
+    requestConfigSinal.addEventListener('abort', () => {
       abortController?.abort();
     });
 
-    this.httpForgeOptions.signal = abortController.signal;
+    this.requestConfig.signal = abortController.signal;
   }
 
   private isRetryError(error: unknown): boolean {
@@ -404,22 +362,38 @@ export class HttpForge {
   }
 
   private isRetryMethod(method: string) {
-    const { allowedRetryMethods } = this.httpForgeOptions.retryPolicy;
+    const { allowedRetryMethods } = this.requestConfig.retryPolicy;
 
     return allowedRetryMethods.includes(method?.toLowerCase());
   }
 
   private isRetryStatusCode(error: HttpError): boolean {
-    const { allowedRetryStatusCodes } = this.httpForgeOptions.retryPolicy;
+    const { allowedRetryStatusCodes } = this.requestConfig.retryPolicy;
     const status = error?.response?.status;
     return allowedRetryStatusCodes.includes(status);
+  }
+
+  private mapResponseHandlers() {
+    const responses = SUPPORTED_HTTP_RESPONSES.reduce(
+      (acc: ResponseHandlerMap, type: SupportedHTTPResponses) => {
+        const updatedAcc = {
+          ...acc,
+          [type]: () => this.fetch(type),
+        };
+
+        return updatedAcc;
+      },
+      {} as ResponseHandlerMap
+    );
+
+    return responses;
   }
 
   private async normalizeResponse(
     response: Response,
     type: SupportedHTTPResponses
   ) {
-    const { jsonParser } = this.httpForgeOptions;
+    const { jsonParser } = this.requestConfig;
 
     if (response.status === 204 && type === 'json') {
       return '';
@@ -443,10 +417,46 @@ export class HttpForge {
     return this.getRetryAfterNumber(retryAfterHeader);
   }
 
+  private prepareRequestConfig(configOptions: HttpRequestConfig) {
+    const {
+      headers,
+      hooks,
+      prefixURL,
+      retryPolicy,
+      searchParams,
+      shouldHandleHttpErrors = true,
+      signal,
+      timeoutLength,
+    } = configOptions;
+
+    const resolvedRetry = buildRetryPolicyConfig(retryPolicy);
+
+    const resolvedTimeout = timeoutLength ?? DEFAULT_HTTP_TIMEOUT_MS;
+
+    const resolvedHeaders = new Headers(headers ?? {});
+
+    const resolvedHooks = this.resolveHooks(hooks);
+
+    const resolvedPrefixURL = this.resolvePrefixURL(prefixURL);
+
+    this.requestConfig = {
+      ...configOptions,
+      credentials: DEFAULT_HTTP_CREDENTIALS,
+      hooks: resolvedHooks,
+      prefixURL: resolvedPrefixURL,
+      requestHeaders: resolvedHeaders,
+      retryPolicy: resolvedRetry,
+      searchParams,
+      shouldHandleHttpErrors,
+      signal,
+      timeoutLength: resolvedTimeout,
+    };
+  }
+
   private prepareRequestSource(requestSource: RequestSource) {
     const prefixedURL = this.appendPrefixToRequestSource(requestSource);
 
-    const { searchParams } = this.httpForgeOptions;
+    const { searchParams } = this.requestConfig;
 
     if (searchParams) {
       return this.appendSearchParamsToURL(searchParams, prefixedURL);
@@ -488,32 +498,14 @@ export class HttpForge {
     return new URLSearchParams(searchParams);
   }
 
-  private responseOptions() {
-    const responses = SUPPORTED_HTTP_RESPONSES.reduce(
-      (acc: ResponseHandlerMap, type: SupportedHTTPResponses) => {
-        const updatedAcc = {
-          ...acc,
-          [type]: () => this.fetch(type),
-        };
-
-        return updatedAcc;
-      },
-      {} as ResponseHandlerMap
-    );
-
-    return responses;
-  }
-
   private shouldRetry(error: unknown): boolean {
-    const { retryLength } = this.httpForgeOptions.retryPolicy;
+    const { retryLength } = this.requestConfig.retryPolicy;
 
     const isValidRetryAttempt = this.retryAttempts < retryLength;
 
     const isValidRetryError = this.isRetryError(error);
     const isValidRetryStatusCode = this.isRetryStatusCode(error as HttpError);
-    const isValidRetryMethod = this.isRetryMethod(
-      this.httpForgeOptions?.method
-    );
+    const isValidRetryMethod = this.isRetryMethod(this.requestConfig?.method);
 
     return (
       isValidRetryAttempt &&
@@ -526,9 +518,7 @@ export class HttpForge {
   private shouldRetryAfter(error: unknown): boolean {
     const isValidRetryError = this.isRetryError(error);
     const isValidRetryAfter = this.errorHasRetryAfter(error);
-    const isValidRetryMethod = this.isRetryMethod(
-      this.httpForgeOptions?.method
-    );
+    const isValidRetryMethod = this.isRetryMethod(this.requestConfig?.method);
     return isValidRetryError && isValidRetryAfter && isValidRetryMethod;
   }
 
