@@ -35,10 +35,10 @@ export const preRetryHook = async (
   requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
-  options: HttpRequestConfig
+  requestConfig: HttpRequestConfig
 ) => {
   // eslint-disable-next-line no-param-reassign
-  options.headers = new Headers({
+  requestConfig.headers = new Headers({
     customHeader: 'This is a custom header',
     error: error.message,
     requestSource: JSON.stringify(requestSource),
@@ -50,7 +50,7 @@ export const preRetryHookError = async (
   requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
-  options: HttpRequestConfig
+  requestConfig: HttpRequestConfig
 ) => {
   throw mockError;
 };
@@ -59,7 +59,7 @@ export const preRetryHookReject = async (
   requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
-  options: HttpRequestConfig
+  requestConfig: HttpRequestConfig
 ) => {
   Promise.reject(mockError);
 };

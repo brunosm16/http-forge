@@ -48,12 +48,12 @@ export const httpForgeFactory = (defaultConfig?: HttpRequestConfig) => {
   }, {} as HttpMethodHandlers);
 
   httpForgeByHandlers.extend = (extendConfig: HttpRequestConfig = {}) => {
-    const options = deepMerge(
+    const requestConfig = deepMerge(
       {},
       { ...defaultConfig, ...extendConfig }
     ) as HttpRequestConfig;
 
-    return httpForgeFactory(options);
+    return httpForgeFactory(requestConfig);
   };
 
   httpForgeByHandlers.haltRequest = () => RequestSignals.HALT_REQUEST_SIGNAL;

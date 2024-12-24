@@ -302,7 +302,7 @@ describe('Retry Policy - After', () => {
       requestSource: RequestSource,
       retryAttempts: number,
       error: Error,
-      options: HttpRequestConfig
+      requestConfig: HttpRequestConfig
     ) => {
       return httpForge.haltRequest();
     };

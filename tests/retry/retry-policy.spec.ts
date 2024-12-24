@@ -348,12 +348,12 @@ describe('Retry logic', () => {
         requestSource: RequestSource,
         retryAttempts: number,
         error: Error,
-        options: HttpRequestConfig
+        requestConfig: HttpRequestConfig
       ) => {
         expect(requestSource).toEqual(endpoint);
         expect(retryAttempts).toEqual(attempts);
         expect(error?.message).toEqual('Service Unavailable');
-        expect(options).toBeTruthy();
+        expect(requestConfig).toBeTruthy();
       };
 
       await httpForge
@@ -445,7 +445,7 @@ describe('Retry logic', () => {
         requestSource: RequestSource,
         retryAttempts: number,
         error: Error,
-        options: HttpRequestConfig
+        requestConfig: HttpRequestConfig
       ) => {
         return httpForge.haltRequest();
       };
