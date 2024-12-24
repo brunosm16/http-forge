@@ -56,12 +56,12 @@ export type ResponseHandlerMap = Record<
 export type KeyedResponseHandlerMap = {
   [key in SupportedHTTPVerbs]: (
     requestSource: RequestSource,
-    defaultOptions?: HttpRequestConfig
+    defaultRequestConfig?: HttpRequestConfig
   ) => ResponseHandlerMap;
 };
 
 export type HandlerExtensions = {
-  extend: (defaultOptions?: HttpRequestConfig) => HttpMethodHandlers;
+  extend: (defaultRequestConfig?: HttpRequestConfig) => HttpMethodHandlers;
   haltRequest: () => RequestSignals.HALT_REQUEST_SIGNAL;
 };
 
@@ -74,7 +74,9 @@ export type RequestHooks = {
   transferHook?: TransferHook;
 };
 
-export type PreRequestHook = (options: HttpRequestOptions) => Promise<void>;
+export type PreRequestHook = (
+  requestConfig: HttpRequestConfig
+) => Promise<void>;
 
 export type PreResponseHook = (response: Response) => Promise<Response>;
 
@@ -82,7 +84,7 @@ export type PreRetryHook = (
   requestSource: RequestSource,
   retryAttempts: number,
   error: Error,
-  options: HttpRequestConfig
+  requestConfig: HttpRequestConfig
 ) => Promise<RequestSignals.HALT_REQUEST_SIGNAL> | Promise<void>;
 
 export type TransferHook = (
