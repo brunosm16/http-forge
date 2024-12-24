@@ -28,30 +28,30 @@ import { makeReadTransferStream } from './streams';
 export class HttpForge {
   private haltRequest: boolean = false;
 
-  private httpForgeInput: RequestSource;
-
   private httpForgeOptions: HttpRequestConfig;
+
+  private requestSource: RequestSource;
 
   private retryAttempts: number = 0;
 
   constructor(
-    httpForgeInput: RequestSource,
+    requestSource: RequestSource,
     httpForgeOptions: HttpRequestConfig
   ) {
     this.initializeOptions(httpForgeOptions);
 
     this.initializeSignal();
 
-    this.httpForgeInput = this.initializeInput(httpForgeInput);
+    this.requestSource = this.prepareRequestSource(requestSource);
 
     this.appendJSONBody();
   }
 
   static createHttpForgeInstance(
-    httpInput: RequestSource,
+    requestSource: RequestSource,
     httpForgeOptions?: HttpRequestConfig
   ) {
-    const httpForge = new HttpForge(httpInput, httpForgeOptions);
+    const httpForge = new HttpForge(requestSource, httpForgeOptions);
     return httpForge.responseOptions();
   }
 
@@ -73,33 +73,33 @@ export class HttpForge {
     }
   }
 
-  private appendPrefixToInput(httpForgeInput: RequestSource) {
+  private appendPrefixToRequestSource(requestSource: RequestSource) {
     const { prefixURL } = this.httpForgeOptions;
 
-    const urlInput = this.extractUrlFromHttpForgeInput(httpForgeInput);
+    const url = this.extractURLFromRequestSource(requestSource);
 
     if (!prefixURL) {
-      return urlInput;
+      return url;
     }
 
-    if (urlInput?.startsWith('/')) {
+    if (url?.startsWith('/')) {
       throw new Error(
         `'HttpForgeInput' cannot starts with '/' when using a prefixURL`
       );
     }
 
-    const normalizedInput = prefixURL + urlInput;
+    const normalizeURL = prefixURL + url;
 
     const { searchParams } = this.httpForgeOptions;
 
     if (searchParams) {
-      return this.appendSearchParamsToInput(searchParams, normalizedInput);
+      return this.appendSearchParamsToURL(searchParams, normalizeURL);
     }
 
-    return normalizedInput;
+    return normalizeURL;
   }
 
-  private appendSearchParamsToInput(
+  private appendSearchParamsToURL(
     searchParams: HttpSearchParams,
     httpInput: string
   ) {
@@ -133,7 +133,7 @@ export class HttpForge {
     this.retryAttempts += 1;
     await this.exponentialBackoff();
     await this.executePreRetryHooks(
-      this.httpForgeInput,
+      this.requestSource,
       this.retryAttempts,
       error,
       this.httpForgeOptions
@@ -157,7 +157,7 @@ export class HttpForge {
     this.retryAttempts += 1;
     await this.applyRetryAfterDelay(error, this.httpForgeOptions?.retryPolicy);
     await this.executePreRetryHooks(
-      this.httpForgeInput,
+      this.requestSource,
       this.retryAttempts,
       error,
       this.httpForgeOptions
@@ -264,7 +264,7 @@ export class HttpForge {
     await delay(backoff);
   }
 
-  private extractUrlFromHttpForgeInput(httpForgeInput: RequestSource) {
+  private extractURLFromRequestSource(httpForgeInput: RequestSource) {
     if (httpForgeInput instanceof URL) {
       return httpForgeInput.toString();
     }
@@ -282,7 +282,7 @@ export class HttpForge {
     try {
       await this.executePreRequestHooks();
 
-      const fetchFn = fetch(this.httpForgeInput, this.httpForgeOptions);
+      const fetchFn = fetch(this.requestSource, this.httpForgeOptions);
 
       const { abortController, timeoutLength } = this.httpForgeOptions;
 
@@ -333,18 +333,6 @@ export class HttpForge {
   private initializeAbortController() {
     const abortController = new AbortController();
     this.httpForgeOptions.abortController = abortController;
-  }
-
-  private initializeInput(httpForgeInput: RequestSource) {
-    const prefixedURL = this.appendPrefixToInput(httpForgeInput);
-
-    const { searchParams } = this.httpForgeOptions;
-
-    if (searchParams) {
-      return this.appendSearchParamsToInput(searchParams, prefixedURL);
-    }
-
-    return prefixedURL;
   }
 
   private initializeOptions(options: HttpRequestConfig) {
@@ -450,6 +438,18 @@ export class HttpForge {
     return this.getRetryAfterNumber(retryAfterHeader);
   }
 
+  private prepareRequestSource(httpForgeInput: RequestSource) {
+    const prefixedURL = this.appendPrefixToRequestSource(httpForgeInput);
+
+    const { searchParams } = this.httpForgeOptions;
+
+    if (searchParams) {
+      return this.appendSearchParamsToURL(searchParams, prefixedURL);
+    }
+
+    return prefixedURL;
+  }
+
   private resolveHooks(hooks: RequestHooks) {
     if (hooks) return hooks;
 
@@ -465,7 +465,7 @@ export class HttpForge {
   private resolvePrefixURL(prefix: RequestSource | null) {
     if (!prefix) return null;
 
-    const prefixString = this.extractUrlFromHttpForgeInput(prefix);
+    const prefixString = this.extractURLFromRequestSource(prefix);
 
     if (!prefixString.endsWith('/')) {
       const normalizedPrefix = prefixString.concat('/');
