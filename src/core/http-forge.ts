@@ -47,7 +47,7 @@ export class HttpForge {
     this.appendJSONBody();
   }
 
-  static createHttpForge(
+  static createHttpForgeInstance(
     httpInput: RequestSource,
     httpForgeOptions?: HttpRequestConfig
   ) {

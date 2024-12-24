@@ -1,5 +1,5 @@
-import { constructHttpForgeMethods } from './core/construct-http-forge-methods';
+import { httpForgeFactory } from './core/http-forge-factory';
 
-const httpForge = constructHttpForgeMethods();
+const httpForge = httpForgeFactory();
 
 export default httpForge;
