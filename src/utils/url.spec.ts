@@ -55,18 +55,6 @@ describe('URL utils', () => {
       );
     });
 
-    it('should append search params to the prefixed URL', () => {
-      const requestSource = 'path/to/resource';
-      const prefixURL = 'https://example.com/';
-      const searchParams = { foo: 'bar' };
-      const result = appendPrefixToRequestSource(
-        requestSource,
-        prefixURL,
-        searchParams
-      );
-      expect(result).toBe('https://example.com/path/to/resource?foo=bar');
-    });
-
     it('should return the request source URL if prefixURL is not provided', () => {
       const requestSource = 'https://example.com/path/to/resource';
       const result = appendPrefixToRequestSource(requestSource, null);

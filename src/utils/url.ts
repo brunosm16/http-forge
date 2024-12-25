@@ -37,8 +37,7 @@ export const appendSearchParamsToURL = (
 
 export const appendPrefixToRequestSource = (
   requestSource: RequestSource,
-  prefixURL: RequestSource,
-  searchParams?: HttpSearchParams
+  prefixURL: RequestSource
 ) => {
   const url = extractURLFromRequestSource(requestSource);
 
@@ -53,10 +52,6 @@ export const appendPrefixToRequestSource = (
   }
 
   const normalizedURL = prefixURL + url;
-
-  if (searchParams) {
-    return appendSearchParamsToURL(searchParams, normalizedURL);
-  }
 
   return normalizedURL;
 };
