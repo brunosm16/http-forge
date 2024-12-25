@@ -21,6 +21,10 @@ import {
 import { RequestSignals } from '@/enums';
 import { HttpError, TimeoutError } from '@/errors';
 import { delay, isTimeStamp, timeout } from '@/utils';
+import {
+  appendPrefixToRequestSource,
+  appendSearchParamsToURL,
+} from '@/utils/url';
 
 import { buildRetryPolicyConfig } from './retry-policy';
 import { makeReadTransferStream } from './streams';
@@ -47,7 +51,7 @@ export class HttpForge {
   static createHttpForgeInstance(
     requestSource: RequestSource,
     requestConfig?: HttpRequestConfig
-  ) {
+  ): ResponseHandlerMap {
     const httpForge = new HttpForge(requestSource, requestConfig);
     return httpForge.mapResponseHandlers();
   }
@@ -65,45 +69,6 @@ export class HttpForge {
       this.requestConfig.requestHeaders.set('Content-Type', 'application/json');
       this.requestConfig.body = JSON.stringify(jsonBody);
     }
-  }
-
-  private appendPrefixToRequestSource(requestSource: RequestSource) {
-    const { prefixURL } = this.requestConfig;
-
-    const url = this.extractURLFromRequestSource(requestSource);
-
-    if (!prefixURL) {
-      return url;
-    }
-
-    if (url?.startsWith('/')) {
-      throw new Error(
-        `'RequestSource' cannot starts with '/' when using a prefixURL`
-      );
-    }
-
-    const normalizeURL = prefixURL + url;
-
-    const { searchParams } = this.requestConfig;
-
-    if (searchParams) {
-      return this.appendSearchParamsToURL(searchParams, normalizeURL);
-    }
-
-    return normalizeURL;
-  }
-
-  private appendSearchParamsToURL(
-    searchParams: HttpSearchParams,
-    baseURL: string
-  ) {
-    const resolvedSearchParams = this.resolveSearchParams(searchParams);
-
-    const url = new URL(baseURL);
-
-    url.search = resolvedSearchParams.toString();
-
-    return url.toString();
   }
 
   private async applyRetryAfterDelay(
@@ -373,7 +338,7 @@ export class HttpForge {
     return allowedRetryStatusCodes.includes(status);
   }
 
-  private mapResponseHandlers() {
+  private mapResponseHandlers(): ResponseHandlerMap {
     const responses = SUPPORTED_HTTP_RESPONSES.reduce(
       (acc: ResponseHandlerMap, type: SupportedHTTPResponses) => {
         const updatedAcc = {
@@ -454,12 +419,12 @@ export class HttpForge {
   }
 
   private prepareRequestSource(requestSource: RequestSource) {
-    const prefixedURL = this.appendPrefixToRequestSource(requestSource);
+    const { prefixURL, searchParams } = this.requestConfig;
 
-    const { searchParams } = this.requestConfig;
+    const prefixedURL = appendPrefixToRequestSource(requestSource, prefixURL);
 
     if (searchParams) {
-      return this.appendSearchParamsToURL(searchParams, prefixedURL);
+      return appendSearchParamsToURL(searchParams, prefixedURL);
     }
 
     return prefixedURL;
