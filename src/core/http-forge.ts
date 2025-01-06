@@ -1,7 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 import type {
   HttpRequestConfig,
-  HttpSearchParams,
   RequestHooks,
   RequestSource,
   ResponseHandlerMap,
@@ -453,14 +452,6 @@ export class HttpForge {
     }
 
     return prefix;
-  }
-
-  private resolveSearchParams(searchParams: HttpSearchParams) {
-    if (!searchParams) {
-      return null;
-    }
-
-    return new URLSearchParams(searchParams);
   }
 
   private shouldRetry(error: unknown): boolean {
