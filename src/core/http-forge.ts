@@ -4,13 +4,11 @@ import type {
   RequestHooks,
   RequestSource,
   ResponseHandlerMap,
-  RetryPolicyConfig,
   SupportedHTTPResponses,
   TransferHook,
 } from '@/types';
 
 import {
-  DEFAULT_DELAY_AFTER_MS,
   DEFAULT_HTTP_BACKOFF_DELAY_MS,
   DEFAULT_HTTP_CREDENTIALS,
   DEFAULT_HTTP_DELAY_FACTOR,
@@ -19,13 +17,13 @@ import {
 } from '@/constants';
 import { RequestSignals } from '@/enums';
 import { HttpError, TimeoutError } from '@/errors';
-import { delay, isTimeStamp, timeout } from '@/utils';
+import { delay, timeout } from '@/utils';
 import {
   appendPrefixToRequestSource,
   appendSearchParamsToURL,
 } from '@/utils/url';
 
-import { buildRetryPolicyConfig } from './retry-policy';
+import { applyRetryAfterDelay, buildRetryPolicyConfig } from './retry-policy';
 import { makeReadTransferStream } from './streams';
 
 export class HttpForge {
@@ -70,19 +68,6 @@ export class HttpForge {
     }
   }
 
-  private async applyRetryAfterDelay(
-    error: unknown,
-    retryPolicy: RetryPolicyConfig
-  ) {
-    const retryAfter = this.parseRetryAfter(error);
-
-    if (retryAfter > retryPolicy?.retryAfterLimit) {
-      return;
-    }
-
-    await delay(retryAfter);
-  }
-
   private async doRetry(
     error: Error,
     type: SupportedHTTPResponses,
@@ -113,7 +98,7 @@ export class HttpForge {
     shouldHandleHttpErrors: boolean
   ) {
     this.retryAttempts += 1;
-    await this.applyRetryAfterDelay(error, this.requestConfig?.retryPolicy);
+    await applyRetryAfterDelay(error, this.requestConfig?.retryPolicy);
     await this.executePreRetryHooks(
       this.requestSource,
       this.retryAttempts,
@@ -277,22 +262,6 @@ export class HttpForge {
     }
   }
 
-  private getRetryAfterNumber(retryAfter: any) {
-    const retryAfterNumber = Number(retryAfter);
-
-    if (Number.isNaN(retryAfterNumber)) {
-      throw new Error(`'Retry-After' header must be a number or a timestamp`);
-    }
-
-    const retryAfterDelay = retryAfter * DEFAULT_DELAY_AFTER_MS;
-
-    return retryAfterDelay;
-  }
-
-  private getRetryAfterTimeStamp(retryAfterHeader: any) {
-    return Date.parse(retryAfterHeader) - Date.now();
-  }
-
   private initializeAbortController() {
     const abortController = new AbortController();
     this.requestConfig.abortController = abortController;
@@ -368,17 +337,6 @@ export class HttpForge {
     }
 
     return response.clone()[type]();
-  }
-
-  private parseRetryAfter(error: unknown) {
-    const anyError = error as HttpError;
-    const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
-
-    if (isTimeStamp(retryAfterHeader)) {
-      return this.getRetryAfterTimeStamp(retryAfterHeader);
-    }
-
-    return this.getRetryAfterNumber(retryAfterHeader);
   }
 
   private prepareRequestConfig(configOptions: HttpRequestConfig) {
