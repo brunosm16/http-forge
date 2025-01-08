@@ -443,7 +443,7 @@ export class HttpForge {
 
     const isValidRetryError = this.isRetryError(error);
     const isValidRetryMethod = this.isRetryMethod(this.requestConfig?.method);
-    const isRetryAllowed =
+    const isValidRetryStatusCode =
       this.shouldRetryAfter(error) ??
       this.isRetryStatusCode(error as HttpError);
 
@@ -451,7 +451,7 @@ export class HttpForge {
       isValidRetryAttempt &&
       isValidRetryError &&
       isValidRetryMethod &&
-      isRetryAllowed
+      isValidRetryStatusCode
     );
   }
 }
