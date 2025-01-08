@@ -1,4 +1,4 @@
-import type { RequestSignals } from '@/enums';
+import type { RequestSignals, RetryType } from '@/enums';
 
 export type HttpError = {
   errorMessage?: string;
@@ -113,4 +113,9 @@ export type RetryPolicyConfig = {
   retryAfterLimit?: number;
 
   retryLength?: number;
+};
+
+export type RetryPolicyStatus = {
+  retryType: RetryType;
+  shouldRetry: boolean;
 };

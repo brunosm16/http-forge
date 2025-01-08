@@ -4,6 +4,7 @@ import type {
   RequestHooks,
   RequestSource,
   ResponseHandlerMap,
+  RetryPolicyStatus,
   SupportedHTTPResponses,
   TransferHook,
 } from '@/types';
@@ -93,19 +94,6 @@ export class HttpForge {
     }
 
     return this.fetch(type);
-  }
-
-  private errorHasRetryAfter(error: unknown) {
-    const anyError = error as HttpError;
-    const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
-    const errorStatusCode = anyError?.response?.status;
-
-    const { allowedRetryAfterStatusCodes } = this.requestConfig.retryPolicy;
-
-    const hasRetryAfterStatusCode =
-      allowedRetryAfterStatusCodes.includes(errorStatusCode);
-
-    return retryAfterHeader && hasRetryAfterStatusCode;
   }
 
   private async executePreRequestHooks() {
@@ -225,21 +213,14 @@ export class HttpForge {
     } catch (error) {
       const { shouldHandleHttpErrors } = this.requestConfig;
 
-      if (this.shouldRetryAfter(error)) {
-        return this.doRetry(
-          error,
-          type,
-          shouldHandleHttpErrors,
-          RetryType.RETRY_AFTER
-        );
-      }
+      const retryStatus = this.getRetryPolicyStatus(error);
 
-      if (this.shouldRetry(error)) {
+      if (retryStatus.shouldRetry) {
         return this.doRetry(
           error,
           type,
           shouldHandleHttpErrors,
-          RetryType.RETRY
+          retryStatus.retryType
         );
       }
 
@@ -257,6 +238,19 @@ export class HttpForge {
     }
 
     return applyRetryAfterDelay(error, this.requestConfig.retryPolicy);
+  }
+
+  private getRetryPolicyStatus(error: unknown): RetryPolicyStatus {
+    return {
+      retryType: this.getRetryType(error),
+      shouldRetry: this.validateRetry(error),
+    };
+  }
+
+  private getRetryType(error: unknown) {
+    return this.shouldRetryAfter(error)
+      ? RetryType.RETRY_AFTER
+      : RetryType.RETRY;
   }
 
   private initializeAbortController() {
@@ -409,28 +403,17 @@ export class HttpForge {
     return prefix;
   }
 
-  private shouldRetry(error: unknown): boolean {
-    const { retryLength } = this.requestConfig.retryPolicy;
+  private shouldRetryAfter(error: unknown) {
+    const anyError = error as HttpError;
+    const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
+    const errorStatusCode = anyError?.response?.status;
 
-    const isValidRetryAttempt = this.retryAttempts < retryLength;
+    const { allowedRetryAfterStatusCodes } = this.requestConfig.retryPolicy;
 
-    const isValidRetryError = this.isRetryError(error);
-    const isValidRetryStatusCode = this.isRetryStatusCode(error as HttpError);
-    const isValidRetryMethod = this.isRetryMethod(this.requestConfig?.method);
+    const hasRetryAfterStatusCode =
+      allowedRetryAfterStatusCodes.includes(errorStatusCode);
 
-    return (
-      isValidRetryAttempt &&
-      isValidRetryError &&
-      isValidRetryStatusCode &&
-      isValidRetryMethod
-    );
-  }
-
-  private shouldRetryAfter(error: unknown): boolean {
-    const isValidRetryError = this.isRetryError(error);
-    const isValidRetryAfter = this.errorHasRetryAfter(error);
-    const isValidRetryMethod = this.isRetryMethod(this.requestConfig?.method);
-    return isValidRetryError && isValidRetryAfter && isValidRetryMethod;
+    return retryAfterHeader && hasRetryAfterStatusCode;
   }
 
   private streamFileTransfer(
@@ -451,5 +434,24 @@ export class HttpForge {
   ) {
     const textResponse = await response.text();
     return jsonParser(textResponse);
+  }
+
+  private validateRetry(error: unknown): boolean {
+    const { retryLength } = this.requestConfig.retryPolicy;
+
+    const isValidRetryAttempt = this.retryAttempts < retryLength;
+
+    const isValidRetryError = this.isRetryError(error);
+    const isValidRetryMethod = this.isRetryMethod(this.requestConfig?.method);
+    const isRetryAllowed =
+      this.shouldRetryAfter(error) ??
+      this.isRetryStatusCode(error as HttpError);
+
+    return (
+      isValidRetryAttempt &&
+      isValidRetryError &&
+      isValidRetryMethod &&
+      isRetryAllowed
+    );
   }
 }
