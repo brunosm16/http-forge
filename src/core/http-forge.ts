@@ -15,7 +15,7 @@ import {
   DEFAULT_HTTP_TIMEOUT_MS,
   SUPPORTED_HTTP_RESPONSES,
 } from '@/constants';
-import { RequestSignals } from '@/enums';
+import { RequestSignals, RetryType } from '@/enums';
 import { HttpError, TimeoutError } from '@/errors';
 import { delay, timeout } from '@/utils';
 import {
@@ -71,34 +71,13 @@ export class HttpForge {
   private async doRetry(
     error: Error,
     type: SupportedHTTPResponses,
-    shouldHandleHttpErrors: boolean
+    shouldHandleHttpErrors: boolean,
+    retryType: RetryType
   ) {
     this.retryAttempts += 1;
-    await this.exponentialBackoff();
-    await this.executePreRetryHooks(
-      this.requestSource,
-      this.retryAttempts,
-      error,
-      this.requestConfig
-    );
 
-    if (this.haltRequest) {
-      if (shouldHandleHttpErrors) {
-        throw error;
-      }
-      return error;
-    }
+    await this.getRetryDelayFn(retryType, error);
 
-    return this.fetch(type);
-  }
-
-  private async doRetryAfter(
-    error: Error,
-    type: SupportedHTTPResponses,
-    shouldHandleHttpErrors: boolean
-  ) {
-    this.retryAttempts += 1;
-    await applyRetryAfterDelay(error, this.requestConfig?.retryPolicy);
     await this.executePreRetryHooks(
       this.requestSource,
       this.retryAttempts,
@@ -247,11 +226,21 @@ export class HttpForge {
       const { shouldHandleHttpErrors } = this.requestConfig;
 
       if (this.shouldRetryAfter(error)) {
-        return this.doRetryAfter(error, type, shouldHandleHttpErrors);
+        return this.doRetry(
+          error,
+          type,
+          shouldHandleHttpErrors,
+          RetryType.RETRY_AFTER
+        );
       }
 
       if (this.shouldRetry(error)) {
-        return this.doRetry(error, type, shouldHandleHttpErrors);
+        return this.doRetry(
+          error,
+          type,
+          shouldHandleHttpErrors,
+          RetryType.RETRY
+        );
       }
 
       if (shouldHandleHttpErrors) {
@@ -260,6 +249,14 @@ export class HttpForge {
 
       return error;
     }
+  }
+
+  private async getRetryDelayFn(retryType: RetryType, error: Error) {
+    if (retryType === RetryType.RETRY) {
+      return this.exponentialBackoff();
+    }
+
+    return applyRetryAfterDelay(error, this.requestConfig.retryPolicy);
   }
 
   private initializeAbortController() {
