@@ -248,9 +248,7 @@ export class HttpForge {
   }
 
   private getRetryType(error: unknown) {
-    return this.shouldRetryAfter(error)
-      ? RetryType.RETRY_AFTER
-      : RetryType.RETRY;
+    return this.isRetryAfter(error) ? RetryType.RETRY_AFTER : RetryType.RETRY;
   }
 
   private initializeAbortController() {
@@ -269,13 +267,26 @@ export class HttpForge {
 
     const { abortController } = this.requestConfig;
 
-    const requestConfigSinal = signal;
+    const requestConfigSignal = signal;
 
-    requestConfigSinal.addEventListener('abort', () => {
+    requestConfigSignal.addEventListener('abort', () => {
       abortController?.abort();
     });
 
     this.requestConfig.signal = abortController.signal;
+  }
+
+  private isRetryAfter(error: unknown) {
+    const anyError = error as HttpError;
+    const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
+    const errorStatusCode = anyError?.response?.status;
+
+    const { allowedRetryAfterStatusCodes } = this.requestConfig.retryPolicy;
+
+    const hasRetryAfterStatusCode =
+      allowedRetryAfterStatusCodes.includes(errorStatusCode);
+
+    return retryAfterHeader && hasRetryAfterStatusCode;
   }
 
   private isRetryError(error: unknown): boolean {
@@ -403,19 +414,6 @@ export class HttpForge {
     return prefix;
   }
 
-  private shouldRetryAfter(error: unknown) {
-    const anyError = error as HttpError;
-    const retryAfterHeader = anyError?.response?.headers?.get('Retry-After');
-    const errorStatusCode = anyError?.response?.status;
-
-    const { allowedRetryAfterStatusCodes } = this.requestConfig.retryPolicy;
-
-    const hasRetryAfterStatusCode =
-      allowedRetryAfterStatusCodes.includes(errorStatusCode);
-
-    return retryAfterHeader && hasRetryAfterStatusCode;
-  }
-
   private streamFileTransfer(
     response: Response,
     fileTransferHook: TransferHook
@@ -444,8 +442,7 @@ export class HttpForge {
     const isValidRetryError = this.isRetryError(error);
     const isValidRetryMethod = this.isRetryMethod(this.requestConfig?.method);
     const isValidRetryStatusCode =
-      this.shouldRetryAfter(error) ??
-      this.isRetryStatusCode(error as HttpError);
+      this.isRetryAfter(error) ?? this.isRetryStatusCode(error as HttpError);
 
     return (
       isValidRetryAttempt &&
