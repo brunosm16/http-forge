@@ -1,0 +1,41 @@
+name: Test coverage with Coveralls for different Operating Systems
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  linux-tests:
+    uses: ./github/workflows/tests.yml
+    with:
+      os: ubuntu
+    secrets:
+      token: ${{ secrets.COVERALLS_REPOSITORY_TOKEN }}
+
+  macos-tests:
+    uses: ./github/workflows/tests.yml
+    with:
+      os: macos
+    secrets:
+      token: ${{ secrets.COVERALLS_REPOSITORY_TOKEN }}
+
+  windows-tests:
+    uses: ./github/workflows/tests.yml
+    with:
+      os: windows
+    secrets:
+      token: ${{ secrets.COVERALLS_REPOSITORY_TOKEN }}
+
+  coveralls:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [linux-tests, macos-tests, windows-tests]
+    steps:
+      - uses: coverallsapp/github-action@v2.3.0
+        with:
+          carryforward: 'linux-1, linux-2, macos-1, macos-2, windows-1, windows-2'
+          parallel-finished: true

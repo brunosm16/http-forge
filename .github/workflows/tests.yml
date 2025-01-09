@@ -1,0 +1,62 @@
+name: Tests Workflow
+run-name: 'Run tests for ${{ inputs.os }}'
+
+on:
+  workflow_call:
+    inputs:
+      build_id:
+        type: string
+        default: ${{ github.run_id}}-${{ github.run_number}}-${{ github.run_attempt}}
+        description: |
+          Build identifier for the current run. Use as `service_number` to Coveralls.
+      os:
+        type: string
+        default: ubuntu
+        description: |
+          Operating System to run the tests on. Default is `ubuntu`, other options are `macos` and `windows`.
+      upload_coverage:
+        type: boolean
+        default: true
+        description: |
+          Whether to upload coverage to Coveralls or not. Default is `true`.
+      store_coverage:
+        type: boolean
+        default: true
+        description: |
+          Whether to store coverage locally or not. Default is `true`.
+    secrets:
+      repo_token_coveralls:
+        required: true
+env:
+  COVERALLS_REPOSITORY_TOKEN: ${{ secrets.repo_token_coveralls }}
+  COVERALLS_SERVICE_NUMBER: ${{ inputs.build_id }}
+
+jobs:
+  test:
+    runs-on: ${{ inputs.os }}-latest
+    strategy:
+      matrix:
+        test_number: [1, 2]
+    outputs:
+      build_id: ${{ inputs.build_id }}
+      result: ${{ steps.coveralls.outputs.coveralls-api-result }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm run test:cov
+      - name: Coveralls
+        id: coveralls
+        if: ${{ inputs.upload_coverage}}
+        uses: coverallsapp/github-action@v2.3.0
+        with:
+          parallel: true
+          flag-name: ${{ inputs.os }}-${{ matrix.test_number }}
+          debug: true
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.store_coverage }}
+        with:
+          name: coverage-data-${{ inputs.os }}-${{ matrix.test_number }}
+          path: coverage/
