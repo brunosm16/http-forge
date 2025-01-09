@@ -4,27 +4,28 @@ on:
   push:
     branches:
       - main
+      - release/*
   pull_request:
     branches:
       - main
 
 jobs:
   linux-tests:
-    uses: ./github/workflows/tests.yml
+    uses: ./.github/workflows/tests.yml
     with:
       os: ubuntu
     secrets:
       token: ${{ secrets.COVERALLS_REPOSITORY_TOKEN }}
 
   macos-tests:
-    uses: ./github/workflows/tests.yml
+    uses: ./.github/workflows/tests.yml
     with:
       os: macos
     secrets:
       token: ${{ secrets.COVERALLS_REPOSITORY_TOKEN }}
 
   windows-tests:
-    uses: ./github/workflows/tests.yml
+    uses: ./.github/workflows/tests.yml
     with:
       os: windows
     secrets:
