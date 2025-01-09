@@ -27,7 +27,7 @@
     "test": "jest --detectOpenHandles --forceExit",
     "test:watch": "npm run test -- --watch",
     "test:watch:verbose": "npm run test:watch -- --verbose",
-    "test:cov": "jest --coverage",
+    "test:cov": "npm run test -- --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
   },
   "devDependencies": {
