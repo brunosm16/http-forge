@@ -14,6 +14,7 @@ import {
   DEFAULT_HTTP_CREDENTIALS,
   DEFAULT_HTTP_DELAY_FACTOR,
   DEFAULT_HTTP_TIMEOUT_MS,
+  DEFAULT_MAX_TIMEOUT,
   SUPPORTED_HTTP_RESPONSES,
 } from '@/constants';
 import { RequestSignals, RetryType } from '@/enums';
@@ -355,7 +356,7 @@ export class HttpForge {
 
     const resolvedRetry = buildRetryPolicyConfig(retryPolicy);
 
-    const resolvedTimeout = timeoutLength ?? DEFAULT_HTTP_TIMEOUT_MS;
+    const resolvedTimeout = this.resolveTimeout(timeoutLength);
 
     const resolvedHeaders = new Headers(headers ?? {});
 
@@ -412,6 +413,16 @@ export class HttpForge {
     }
 
     return prefix;
+  }
+
+  private resolveTimeout(timeoutLength: number) {
+    if (timeoutLength > DEFAULT_MAX_TIMEOUT) {
+      throw new Error(
+        `Timeout length (${timeoutLength}ms) exceeds the maximum allowed limit of ${DEFAULT_MAX_TIMEOUT}ms.`
+      );
+    }
+
+    return timeoutLength ?? DEFAULT_HTTP_TIMEOUT_MS;
   }
 
   private streamFileTransfer(

@@ -176,4 +176,20 @@ describe('Headers tests', () => {
       customKey,
     });
   });
+
+  it('Should throw error for invalid timeout', async () => {
+    const endpoint = `${server.url}/success`;
+
+    let message = '';
+
+    try {
+      await httpForge.get(endpoint, { timeoutLength: 3_147_483_647 }).text();
+    } catch (err) {
+      message = err?.message;
+    }
+
+    expect(message).toEqual(
+      'Timeout length (3147483647ms) exceeds the maximum allowed limit of 2147483647ms.'
+    );
+  });
 });
